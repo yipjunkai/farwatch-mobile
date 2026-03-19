@@ -19,7 +19,7 @@ class TerminalScreen extends StatefulWidget {
   State<TerminalScreen> createState() => _TerminalScreenState();
 }
 
-class _TerminalScreenState extends State<TerminalScreen> {
+class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObserver {
   late final RelaySession _session;
   late final Terminal _terminal;
   StreamSubscription? _outputSub;
@@ -28,11 +28,11 @@ class _TerminalScreenState extends State<TerminalScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _terminal = Terminal(
       maxLines: 10000,
       onOutput: (data) {
-        // User typed something in the terminal widget -> send to host
         _session.sendInput(Uint8List.fromList(data.codeUnits));
       },
       onResize: (width, height, pixelWidth, pixelHeight) {
@@ -41,7 +41,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     );
 
     _session = RelaySession(pairing: widget.pairing);
-    _session.addListener(_onSessionStateChanged);
+    _session.addListener(_onStateChanged);
 
     _outputSub = _session.output.listen((bytes) {
       _terminal.write(utf8.decode(bytes, allowMalformed: true));
@@ -61,7 +61,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     _session.connect();
   }
 
-  void _onSessionStateChanged() {
+  void _onStateChanged() {
     if (mounted) setState(() {});
   }
 
@@ -73,22 +73,43 @@ class _TerminalScreenState extends State<TerminalScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Future: reconnect on resume, pause heartbeats on background
+  }
+
+  @override
   void dispose() {
-    _session.removeListener(_onSessionStateChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _session.removeListener(_onStateChanged);
     _outputSub?.cancel();
     _eventSub?.cancel();
     _session.dispose();
     super.dispose();
   }
 
+  void _close() async {
+    await _session.disconnect();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const ScanScreen()),
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Status bar
+  // ---------------------------------------------------------------------------
+
   Widget _buildStatusBar() {
     final (icon, label, color) = switch (_session.state) {
-      SessionState.disconnected => (Icons.link_off, 'Disconnected', Colors.grey),
-      SessionState.connecting => (Icons.sync, 'Connecting...', Colors.orange),
-      SessionState.waitingForPeer => (Icons.hourglass_empty, 'Waiting for host...', Colors.orange),
-      SessionState.handshaking => (Icons.handshake, 'Handshaking...', Colors.amber),
-      SessionState.connected => (Icons.lock, 'Connected (E2E encrypted)', Colors.green),
-      SessionState.error => (Icons.error, _session.error ?? 'Error', Colors.red),
+      SessionState.disconnected     => (Icons.link_off, 'Disconnected', Colors.grey),
+      SessionState.connecting       => (Icons.sync, 'Connecting...', Colors.orange),
+      SessionState.waitingForPeer   => (Icons.hourglass_empty, 'Waiting for host...', Colors.orange),
+      SessionState.handshaking      => (Icons.handshake, 'Key exchange...', Colors.amber),
+      SessionState.awaitingConfirm  => (Icons.handshake, 'Verifying...', Colors.amber),
+      SessionState.connected        => (Icons.lock, 'Connected (E2E encrypted)', Colors.green),
+      SessionState.reconnecting     => (Icons.sync, 'Reconnecting...', Colors.orange),
+      SessionState.error            => (Icons.error, _session.error ?? 'Error', Colors.red),
     };
 
     final showReconnect = _session.state == SessionState.error ||
@@ -126,6 +147,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,18 +159,18 @@ class _TerminalScreenState extends State<TerminalScreen> {
         title: const Text('Terminal'),
         backgroundColor: Colors.grey[900],
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _close,
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () async {
-              await _session.disconnect();
-              if (mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const ScanScreen()),
-                );
-              }
-            },
-          ),
+          if (_session.state == SessionState.error ||
+              _session.state == SessionState.disconnected)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Reconnect',
+              onPressed: () => _session.connect(),
+            ),
         ],
       ),
       body: Column(

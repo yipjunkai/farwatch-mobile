@@ -363,18 +363,32 @@ RelayMessage decodeRelay(Uint8List bytes) {
 }
 
 Uint8List encodePeerFrame(PeerFrame frame) {
+  // Unit variants are serialized as bare strings by Rust's rmp_serde.
+  // Non-unit variants are serialized as {"VariantName": <inner>}.
+  if (frame is PeerFrameKeepAlive) {
+    return msgpack.serialize('KeepAlive');
+  }
   final map = switch (frame) {
     PeerFrameHandshake(handshake: final h) => {'Handshake': h.toMap()},
     PeerFrameHandshakeConfirm(confirm: final c) => {'HandshakeConfirm': c.toMap()},
     PeerFrameSecure(frame: final f) => {'Secure': f.toMap()},
-    PeerFrameKeepAlive() => {'KeepAlive': null},
+    PeerFrameKeepAlive() => throw StateError('unreachable'),
   };
   return msgpack.serialize(map);
 }
 
 PeerFrame decodePeerFrame(Uint8List bytes) {
   final decoded = msgpack.deserialize(bytes);
-  if (decoded is! Map) throw FormatException('Expected map for PeerFrame');
+
+  // Unit variants are serialized as bare strings by Rust's rmp_serde.
+  if (decoded is String) {
+    return switch (decoded) {
+      'KeepAlive' => PeerFrameKeepAlive(),
+      _ => throw FormatException('Unknown PeerFrame unit variant: $decoded'),
+    };
+  }
+
+  if (decoded is! Map) throw FormatException('Expected map or string for PeerFrame, got ${decoded.runtimeType}');
 
   final entry = decoded.entries.first;
   final key = entry.key as String;
@@ -390,11 +404,15 @@ PeerFrame decodePeerFrame(Uint8List bytes) {
 }
 
 Uint8List encodeSecureMessage(SecureMessage msg) {
+  // Unit variants are serialized as bare strings by Rust's rmp_serde.
+  if (msg is Heartbeat) {
+    return msgpack.serialize('Heartbeat');
+  }
   final map = switch (msg) {
     PtyInput(data: final d)                     => {'PtyInput': d},
     PtyOutput(data: final d)                    => {'PtyOutput': d},
     Resize(cols: final c, rows: final r)        => {'Resize': {'cols': c, 'rows': r}},
-    Heartbeat()                                 => {'Heartbeat': null},
+    Heartbeat()                                 => throw StateError('unreachable'),
     VersionNotice(minimumVersion: final v)      => {'VersionNotice': {'minimum_version': v}},
     SessionEnded(exitCode: final c)             => {'SessionEnded': {'exit_code': c}},
     ClipboardMsg(content: final c)              => {'Clipboard': {'content': c}},
@@ -407,6 +425,15 @@ Uint8List encodeSecureMessage(SecureMessage msg) {
 SecureMessage decodeSecureMessage(Uint8List bytes) {
   try {
     final decoded = msgpack.deserialize(bytes);
+
+    // Unit variants are serialized as bare strings by Rust's rmp_serde.
+    if (decoded is String) {
+      return switch (decoded) {
+        'Heartbeat' => Heartbeat(),
+        _ => UnknownMessage(bytes),
+      };
+    }
+
     if (decoded is! Map) return UnknownMessage(bytes);
 
     final entry = decoded.entries.first;

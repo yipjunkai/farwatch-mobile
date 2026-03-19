@@ -1,152 +1,265 @@
 import 'dart:async';
-import 'dart:collection';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../core/protocol.dart';
 
-/// WebSocket connection to the terminal-relay server.
-class RelayClient {
-  final WebSocketChannel _channel;
+/// Configuration for reconnect behavior.
+class ReconnectConfig {
+  final int maxAttempts;
+  final Duration initialDelay;
+  final Duration maxDelay;
 
-  /// Messages that arrived before the session listener was attached.
-  final Queue<RelayMessage> _pendingMessages = Queue<RelayMessage>();
+  const ReconnectConfig({
+    this.maxAttempts = 10,
+    this.initialDelay = const Duration(seconds: 1),
+    this.maxDelay = const Duration(seconds: 30),
+  });
 
-  /// The session sets this callback to receive messages.
-  void Function(RelayMessage)? _onMessage;
-  void Function(Object)? _onError;
-  void Function()? _onDone;
-
-  RegisterResponse? registered;
-  bool _closed = false;
-
-  RelayClient._(this._channel) {
-    _channel.stream.listen(
-      (data) {
-        debugPrint('[ws] received data type: ${data.runtimeType}');
-        if (data is! List<int>) return;
-        try {
-          final msg = decodeRelay(Uint8List.fromList(data));
-          debugPrint('[ws] decoded: ${msg.runtimeType}');
-          _deliver(msg);
-        } catch (e) {
-          debugPrint('[ws] decode error: $e');
-        }
-      },
-      onError: (error) {
-        if (_onError != null) {
-          _onError!(error);
-        }
-      },
-      onDone: () {
-        _closed = true;
-        if (_onDone != null) {
-          _onDone!();
-        }
-      },
-    );
+  Duration delayForAttempt(int attempt) {
+    final ms = initialDelay.inMilliseconds * pow(2, attempt).toInt();
+    return Duration(milliseconds: min(ms, maxDelay.inMilliseconds));
   }
+}
 
-  void _deliver(RelayMessage msg) {
-    if (_onMessage != null) {
-      _onMessage!(msg);
-    } else {
-      // Buffer until a listener is attached
-      _pendingMessages.add(msg);
-    }
-  }
+/// Connection state visible to consumers.
+enum ConnectionState {
+  disconnected,
+  connecting,
+  connected,
+  reconnecting,
+  failed,
+}
 
-  /// Set the message handler. Any buffered messages are delivered immediately.
-  void listen({
-    required void Function(RelayMessage) onMessage,
-    void Function(Object)? onError,
-    void Function()? onDone,
-  }) {
-    _onMessage = onMessage;
-    _onError = onError;
-    _onDone = onDone;
+/// Thin WebSocket wrapper that handles:
+/// - Connection lifecycle and registration
+/// - Automatic reconnect with exponential backoff
+/// - Heartbeat pings
+/// - Message decoding
+///
+/// Messages are delivered via a callback set by the session layer.
+/// Registration is handled internally -- the session never sees Register/Registered.
+class RelayClient extends ChangeNotifier {
+  final String _relayUrl;
+  final ReconnectConfig _reconnectConfig;
 
-    // Drain any messages that arrived before the listener was set
-    while (_pendingMessages.isNotEmpty) {
-      _onMessage!(_pendingMessages.removeFirst());
-    }
+  WebSocketChannel? _channel;
+  StreamSubscription? _channelSub;
+  Timer? _heartbeatTimer;
+  RegisterRequest? _lastRequest;
+
+  ConnectionState _state = ConnectionState.disconnected;
+  ConnectionState get state => _state;
+
+  RegisterResponse? _registered;
+  RegisterResponse? get registered => _registered;
+
+  String? _lastError;
+  String? get lastError => _lastError;
+
+  int _reconnectAttempt = 0;
+  bool _disposed = false;
+  bool _intentionalClose = false;
+
+  /// Message callback set by the session layer.
+  void Function(RelayMessage msg)? onMessage;
+
+  /// Called when connection state changes to connected (including reconnect).
+  void Function()? onConnected;
+
+  /// Called when connection is lost (before reconnect attempt).
+  void Function()? onDisconnected;
+
+  RelayClient({
+    required String relayUrl,
+    ReconnectConfig reconnectConfig = const ReconnectConfig(),
+  })  : _relayUrl = relayUrl,
+        _reconnectConfig = reconnectConfig;
+
+  void _setState(ConnectionState s) {
+    if (_disposed) return;
+    debugPrint('[relay] state: $s');
+    _state = s;
+    notifyListeners();
   }
 
   /// Connect to the relay and register.
-  static Future<RelayClient> connect({
-    required String relayUrl,
-    required RegisterRequest request,
-    Duration timeout = const Duration(seconds: 15),
-  }) async {
-    final wsUrl = Uri.parse(relayUrl);
-    final channel = WebSocketChannel.connect(wsUrl);
-    await channel.ready.timeout(timeout);
-
-    final client = RelayClient._(channel);
-
-    // Send Register message
-    client.sendRaw(encodeRelay(RelayRegister(request)));
-
-    // Wait for Registered response. Messages are buffered in the queue
-    // until the session calls listen().
-    final completer = Completer<RegisterResponse>();
-    client._onMessage = (msg) {
-      if (msg is RelayRegistered) {
-        // Stop consuming, buffer the rest for the session
-        client._onMessage = null;
-        completer.complete(msg.response);
-      } else if (msg is RelayErrorMsg) {
-        client._onMessage = null;
-        completer.completeError(
-          Exception('Registration failed: ${msg.error.message}'),
-        );
-      } else {
-        // Buffer any other messages (e.g. PeerStatus) for the session
-        client._pendingMessages.add(msg);
-      }
-    };
-
-    client.registered = await completer.future.timeout(timeout);
-    return client;
+  Future<void> connect(RegisterRequest request) async {
+    if (_disposed) return;
+    _lastRequest = request;
+    _intentionalClose = false;
+    _reconnectAttempt = 0;
+    await _connectOnce(request);
   }
 
-  bool get isClosed => _closed;
+  Future<void> _connectOnce(RegisterRequest request) async {
+    if (_disposed || _intentionalClose) return;
+    _setState(ConnectionState.connecting);
+    _lastError = null;
 
-  void sendRaw(Uint8List bytes) {
-    if (!_closed) {
-      _channel.sink.add(bytes);
+    try {
+      await _teardownChannel();
+
+      final wsUrl = Uri.parse(_relayUrl);
+      _channel = WebSocketChannel.connect(wsUrl);
+      await _channel!.ready.timeout(const Duration(seconds: 15));
+
+      // Registration phase: collect messages until we get Registered.
+      final registeredCompleter = Completer<RegisterResponse>();
+      final buffered = <RelayMessage>[];
+
+      _channelSub = _channel!.stream.listen(
+        (data) {
+          if (data is! List<int>) return;
+          try {
+            final msg = decodeRelay(Uint8List.fromList(data));
+
+            if (!registeredCompleter.isCompleted) {
+              // During registration phase
+              if (msg is RelayRegistered) {
+                registeredCompleter.complete(msg.response);
+              } else if (msg is RelayErrorMsg) {
+                registeredCompleter.completeError(
+                  Exception('Registration failed: ${msg.error.message}'),
+                );
+              } else {
+                // Buffer messages that arrive before registration completes
+                buffered.add(msg);
+              }
+            } else {
+              // Post-registration: deliver to session
+              onMessage?.call(msg);
+            }
+          } catch (e) {
+            debugPrint('[relay] decode error: $e');
+          }
+        },
+        onError: (e) {
+          debugPrint('[relay] ws error: $e');
+          if (!registeredCompleter.isCompleted) {
+            registeredCompleter.completeError(e);
+          } else {
+            _handleDisconnect();
+          }
+        },
+        onDone: () {
+          debugPrint('[relay] ws closed');
+          if (!registeredCompleter.isCompleted) {
+            registeredCompleter.completeError(
+              Exception('WebSocket closed during registration'),
+            );
+          } else {
+            _handleDisconnect();
+          }
+        },
+      );
+
+      // Send Register
+      _rawSend(encodeRelay(RelayRegister(request)));
+
+      // Wait for Registered
+      _registered = await registeredCompleter.future
+          .timeout(const Duration(seconds: 15));
+
+      _reconnectAttempt = 0;
+      _setState(ConnectionState.connected);
+
+      // Start heartbeat
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = Timer.periodic(
+        const Duration(seconds: 10),
+        (_) => send(RelayPing(DateTime.now().millisecondsSinceEpoch)),
+      );
+
+      debugPrint('[relay] connected, peer_online=${_registered!.peerOnline}');
+
+      // Deliver buffered messages
+      for (final msg in buffered) {
+        onMessage?.call(msg);
+      }
+
+      // Notify session
+      onConnected?.call();
+    } catch (e) {
+      debugPrint('[relay] connect failed: $e');
+      _lastError = e.toString();
+      _handleDisconnect();
     }
   }
 
-  void send(RelayMessage msg) {
-    sendRaw(encodeRelay(msg));
+  void _handleDisconnect() {
+    if (_disposed || _intentionalClose) return;
+
+    _heartbeatTimer?.cancel();
+    onDisconnected?.call();
+
+    if (_reconnectAttempt >= _reconnectConfig.maxAttempts) {
+      _lastError ??= 'Failed after ${_reconnectConfig.maxAttempts} attempts';
+      _setState(ConnectionState.failed);
+      return;
+    }
+
+    _setState(ConnectionState.reconnecting);
+    final delay = _reconnectConfig.delayForAttempt(_reconnectAttempt);
+    _reconnectAttempt++;
+    debugPrint('[relay] reconnecting in ${delay.inMilliseconds}ms '
+        '(attempt $_reconnectAttempt/${_reconnectConfig.maxAttempts})');
+
+    Future.delayed(delay, () {
+      if (!_disposed && !_intentionalClose && _lastRequest != null) {
+        _connectOnce(_lastRequest!);
+      }
+    });
   }
 
+  /// Send an encoded RelayMessage.
+  void send(RelayMessage msg) {
+    _rawSend(encodeRelay(msg));
+  }
+
+  /// Send a PeerFrame wrapped in a Route.
   void sendPeerFrame(String sessionId, PeerFrame frame) {
     final payload = encodePeerFrame(frame);
     send(RelayRouteMsg(RelayRoute(sessionId: sessionId, payload: payload)));
   }
 
-  void sendHandshake({
-    required String sessionId,
-    required Uint8List publicKey,
-    required String fingerprint,
-    String? toolName,
-  }) {
-    sendPeerFrame(
-      sessionId,
-      PeerFrameHandshake(Handshake(
-        publicKey: publicKey,
-        fingerprint: fingerprint,
-        toolName: toolName,
-        timestampMs: DateTime.now().millisecondsSinceEpoch,
-      )),
-    );
+  void _rawSend(Uint8List bytes) {
+    if (_channel == null) return;
+    try {
+      _channel!.sink.add(bytes);
+    } catch (e) {
+      debugPrint('[relay] send error: $e');
+    }
   }
 
-  Future<void> close() async {
-    _closed = true;
-    await _channel.sink.close();
+  Future<void> _teardownChannel() async {
+    _heartbeatTimer?.cancel();
+    _channelSub?.cancel();
+    _channelSub = null;
+    try {
+      await _channel?.sink.close();
+    } catch (_) {}
+    _channel = null;
+  }
+
+  /// Gracefully disconnect. No reconnect.
+  Future<void> disconnect() async {
+    _intentionalClose = true;
+    await _teardownChannel();
+    if (!_disposed) _setState(ConnectionState.disconnected);
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _intentionalClose = true;
+    _heartbeatTimer?.cancel();
+    _channelSub?.cancel();
+    try {
+      _channel?.sink.close();
+    } catch (_) {}
+    super.dispose();
   }
 }

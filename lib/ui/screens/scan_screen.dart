@@ -12,13 +12,71 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  MobileScannerController? _controller;
   bool _processed = false;
   final _manualController = TextEditingController();
 
+  // Camera state
+  bool _cameraInitialized = false;
+  String? _cameraError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    _controller = MobileScannerController();
+
+    // Listen for permission/error state
+    _controller!.addListener(() {
+      if (!mounted) return;
+      final state = _controller!.value;
+
+      if (state.error != null) {
+        setState(() {
+          _cameraError = _describeError(state.error!);
+          _cameraInitialized = false;
+        });
+      } else if (state.isInitialized) {
+        setState(() {
+          _cameraInitialized = true;
+          _cameraError = null;
+        });
+      }
+    });
+
+    try {
+      await _controller!.start();
+      if (mounted && _controller!.value.isInitialized) {
+        setState(() {
+          _cameraInitialized = true;
+          _cameraError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _cameraError = e.toString();
+        });
+      }
+    }
+  }
+
+  String _describeError(MobileScannerException error) {
+    return switch (error.errorCode) {
+      MobileScannerErrorCode.permissionDenied =>
+        'Camera permission denied.\n\nGo to Settings > Apps > Terminal Relay > Permissions and enable Camera.',
+      MobileScannerErrorCode.unsupported =>
+        'Camera not available on this device.',
+      _ => 'Camera error: ${error.errorDetails?.message ?? error.errorCode.name}',
+    };
+  }
+
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     _manualController.dispose();
     super.dispose();
   }
@@ -98,6 +156,68 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Camera error / permission denied view
+  // ---------------------------------------------------------------------------
+
+  Widget _buildCameraError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.no_photography, size: 64, color: Colors.grey[600]),
+            const SizedBox(height: 24),
+            Text(
+              _cameraError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _cameraError = null;
+                  _cameraInitialized = false;
+                });
+                _controller?.dispose();
+                _initCamera();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Or paste a pairing URI manually',
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCameraLoading() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text(
+            'Starting camera...',
+            style: TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,10 +237,14 @@ class _ScanScreenState extends State<ScanScreen> {
       body: Column(
         children: [
           Expanded(
-            child: MobileScanner(
-              controller: _controller,
-              onDetect: _onDetect,
-            ),
+            child: _cameraError != null
+                ? _buildCameraError()
+                : !_cameraInitialized
+                    ? _buildCameraLoading()
+                    : MobileScanner(
+                        controller: _controller!,
+                        onDetect: _onDetect,
+                      ),
           ),
           Padding(
             padding: const EdgeInsets.all(24),

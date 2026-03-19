@@ -68,6 +68,10 @@ class RelaySession extends ChangeNotifier {
   final _frameQueue = Queue<PeerFrame>();
   bool _processingHandshake = false;
 
+  // Handshake timeout
+  Timer? _handshakeTimer;
+  static const _handshakeTimeout = Duration(seconds: 15);
+
   // Output streams
   final _outputController = StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get output => _outputController.stream;
@@ -85,13 +89,54 @@ class RelaySession extends ChangeNotifier {
     if (_disposed) return;
     debugPrint('[session] $_state -> $s');
     _state = s;
+
+    // Manage handshake timeout
+    if (s == SessionState.handshaking || s == SessionState.awaitingConfirm ||
+        s == SessionState.waitingForPeer) {
+      _startHandshakeTimer();
+    } else {
+      _handshakeTimer?.cancel();
+      _handshakeTimer = null;
+    }
+
     notifyListeners();
   }
 
   void _setError(String msg) {
     debugPrint('[session] error: $msg');
     _error = msg;
+    _handshakeTimer?.cancel();
+    _handshakeTimer = null;
     _setState(SessionState.error);
+  }
+
+  void _startHandshakeTimer() {
+    _handshakeTimer?.cancel();
+    _handshakeTimer = Timer(_handshakeTimeout, () {
+      if (_disposed) return;
+      if (_state == SessionState.handshaking ||
+          _state == SessionState.awaitingConfirm ||
+          _state == SessionState.waitingForPeer) {
+        debugPrint('[session] handshake timed out, retrying');
+        _retryHandshake();
+      }
+    });
+  }
+
+  void _retryHandshake() {
+    _channel = null;
+    _expectedPeerMac = null;
+    _frameQueue.clear();
+    _processingHandshake = false;
+
+    if (_client?.state == ConnectionState.connected) {
+      // Still connected to relay, just resend handshake
+      _sendHandshake();
+      _setState(SessionState.handshaking);
+    } else {
+      // Connection lost, trigger full reconnect
+      _client?.reconnectNow();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -426,6 +471,28 @@ class RelaySession extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
+  // App lifecycle
+  // ---------------------------------------------------------------------------
+
+  void pauseHeartbeat() {
+    _client?.pauseHeartbeat();
+  }
+
+  void resumeOrReconnect() {
+    if (_disposed || _client == null) return;
+
+    final clientState = _client!.state;
+    if (clientState == ConnectionState.connected) {
+      // Connection still alive, just resume heartbeat
+      _client!.resumeHeartbeat();
+    } else if (clientState != ConnectionState.connecting) {
+      // Connection died while backgrounded, reconnect immediately
+      debugPrint('[session] connection lost while backgrounded, reconnecting');
+      _client!.reconnectNow();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Disconnect
   // ---------------------------------------------------------------------------
 
@@ -439,6 +506,8 @@ class RelaySession extends ChangeNotifier {
       } catch (_) {}
     }
 
+    _handshakeTimer?.cancel();
+    _handshakeTimer = null;
     _channel = null;
     _expectedPeerMac = null;
     _frameQueue.clear();
@@ -450,6 +519,7 @@ class RelaySession extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _handshakeTimer?.cancel();
     _channel = null;
     _expectedPeerMac = null;
     _frameQueue.clear();

@@ -244,6 +244,33 @@ class RelayClient extends ChangeNotifier {
     _channel = null;
   }
 
+  /// Force an immediate reconnect (e.g. after app resume).
+  /// Skips backoff delay. No-op if already connected or disposed.
+  void reconnectNow() {
+    if (_disposed || _intentionalClose) return;
+    if (_state == ConnectionState.connected) return;
+    if (_lastRequest == null) return;
+    debugPrint('[relay] reconnectNow requested');
+    _reconnectAttempt = 0;
+    _connectOnce(_lastRequest!);
+  }
+
+  /// Pause heartbeats (e.g. when app is backgrounded).
+  void pauseHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
+  /// Resume heartbeats (e.g. when app is foregrounded).
+  void resumeHeartbeat() {
+    if (_state != ConnectionState.connected) return;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => send(RelayPing(DateTime.now().millisecondsSinceEpoch)),
+    );
+  }
+
   /// Gracefully disconnect. No reconnect.
   Future<void> disconnect() async {
     _intentionalClose = true;

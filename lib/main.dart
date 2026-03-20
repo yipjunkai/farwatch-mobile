@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'core/log.dart';
 import 'core/pairing.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/terminal_screen.dart';
@@ -49,7 +50,7 @@ class _TerminalRelayAppState extends State<TerminalRelayApp> {
     } on MissingPluginException {
       // No native handler (e.g. in tests) -- ignore
     } catch (e) {
-      debugPrint('[deeplink] initial link error: $e');
+      log('[deeplink] initial link error: $e');
     }
   }
 

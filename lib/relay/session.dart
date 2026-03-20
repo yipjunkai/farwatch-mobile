@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 
 import '../core/crypto.dart';
+import '../core/log.dart';
 import '../core/pairing.dart';
 import '../core/protocol.dart';
 import 'relay_client.dart';
@@ -87,7 +88,7 @@ class RelaySession extends ChangeNotifier {
 
   void _setState(SessionState s) {
     if (_disposed) return;
-    debugPrint('[session] $_state -> $s');
+    log('[session] $_state -> $s');
     _state = s;
 
     // Manage handshake timeout
@@ -103,7 +104,7 @@ class RelaySession extends ChangeNotifier {
   }
 
   void _setError(String msg) {
-    debugPrint('[session] error: $msg');
+    log('[session] error: $msg');
     _error = msg;
     _handshakeTimer?.cancel();
     _handshakeTimer = null;
@@ -117,7 +118,7 @@ class RelaySession extends ChangeNotifier {
       if (_state == SessionState.handshaking ||
           _state == SessionState.awaitingConfirm ||
           _state == SessionState.waitingForPeer) {
-        debugPrint('[session] handshake timed out, retrying');
+        log('[session] handshake timed out, retrying');
         _retryHandshake();
       }
     });
@@ -152,7 +153,7 @@ class RelaySession extends ChangeNotifier {
       // Generate ephemeral key pair
       _localKey = await generateKeyPair();
       _localFingerprint = await fingerprint(_localKey!.public_);
-      debugPrint('[session] fingerprint: $_localFingerprint');
+      log('[session] fingerprint: $_localFingerprint');
 
       // Create relay client
       _client?.dispose();
@@ -184,7 +185,7 @@ class RelaySession extends ChangeNotifier {
 
   void _onRelayConnected() {
     if (_disposed) return;
-    debugPrint('[session] relay connected, peer_online=${_client?.registered?.peerOnline}');
+    log('[session] relay connected, peer_online=${_client?.registered?.peerOnline}');
 
     // Reset handshake state on every new connection
     _channel = null;
@@ -243,7 +244,7 @@ class RelaySession extends ChangeNotifier {
   }
 
   void _onPeerStatus(PeerStatus status) {
-    debugPrint('[session] peer status: ${status.role} online=${status.online}');
+    log('[session] peer status: ${status.role} online=${status.online}');
     if (status.role != PeerRole.host) return;
 
     if (status.online) {
@@ -269,13 +270,13 @@ class RelaySession extends ChangeNotifier {
     try {
       frame = decodePeerFrame(route.payload);
     } catch (e) {
-      debugPrint('[session] bad peer frame: $e');
+      log('[session] bad peer frame: $e');
       return;
     }
 
     // If handshake is in progress (async key derivation), queue the frame.
     if (_processingHandshake) {
-      debugPrint('[session] queuing ${frame.runtimeType} (handshake in progress)');
+      log('[session] queuing ${frame.runtimeType} (handshake in progress)');
       _frameQueue.add(frame);
       return;
     }
@@ -304,7 +305,7 @@ class RelaySession extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   void _sendHandshake() {
-    debugPrint('[session] sending handshake');
+    log('[session] sending handshake');
     _client?.sendPeerFrame(
       pairing.sessionId,
       PeerFrameHandshake(Handshake(
@@ -317,7 +318,7 @@ class RelaySession extends ChangeNotifier {
   }
 
   Future<void> _onPeerHandshake(Handshake handshake) async {
-    debugPrint('[session] peer handshake: fp=${handshake.fingerprint} '
+    log('[session] peer handshake: fp=${handshake.fingerprint} '
         'tool=${handshake.toolName} key_len=${handshake.publicKey.length}');
 
     // Ignore duplicate handshakes if we already have a channel (in-progress
@@ -325,7 +326,7 @@ class RelaySession extends ChangeNotifier {
     // dual-handshake race where both sides send Handshake simultaneously —
     // the first one processed wins, and the second is safely dropped.
     if (_channel != null || _processingHandshake) {
-      debugPrint('[session] ignoring duplicate handshake '
+      log('[session] ignoring duplicate handshake '
           '(channel=${_channel != null}, processing=$_processingHandshake, '
           'state=$_state)');
       return;
@@ -335,7 +336,7 @@ class RelaySession extends ChangeNotifier {
     final now = DateTime.now().millisecondsSinceEpoch;
     final age = now - handshake.timestampMs;
     if (age.abs() > handshakeMaxAgeMs) {
-      debugPrint('[session] rejecting stale handshake (age=${age}ms)');
+      log('[session] rejecting stale handshake (age=${age}ms)');
       return;
     }
 
@@ -353,14 +354,14 @@ class RelaySession extends ChangeNotifier {
 
     try {
       // Derive session keys (async — this is where the race condition was)
-      debugPrint('[session] deriving keys...');
+      log('[session] deriving keys...');
       final keys = await deriveSessionKeys(
         role: PeerRole.client,
         sessionId: pairing.sessionId,
         localSecret: _localKey!.secret,
         remotePublic: handshake.publicKey,
       );
-      debugPrint('[session] keys derived');
+      log('[session] keys derived');
 
       // Compute MACs
       final ourMac = await computeHandshakeMac(
@@ -379,7 +380,7 @@ class RelaySession extends ChangeNotifier {
       _channel = SecureChannel(keys);
 
       // Send our confirmation
-      debugPrint('[session] sending confirm');
+      log('[session] sending confirm');
       _client?.sendPeerFrame(
         pairing.sessionId,
         PeerFrameHandshakeConfirm(HandshakeConfirm(mac: ourMac)),
@@ -395,29 +396,21 @@ class RelaySession extends ChangeNotifier {
     // Drain queued frames
     while (_frameQueue.isNotEmpty) {
       final queued = _frameQueue.removeFirst();
-      debugPrint('[session] processing queued ${queued.runtimeType}');
+      log('[session] processing queued ${queued.runtimeType}');
       _processFrame(queued);
     }
   }
 
   void _onPeerConfirm(HandshakeConfirm confirm) {
-    debugPrint('[session] peer confirm received');
+    log('[session] peer confirm received');
 
     if (_expectedPeerMac == null || _channel == null) {
-      debugPrint('[session] ignoring confirm: no pending handshake');
+      log('[session] ignoring confirm: no pending handshake');
       return;
     }
 
-    // Constant-time compare
-    if (confirm.mac.length != 32 || _expectedPeerMac!.length != 32) {
-      _setError('Invalid MAC length');
-      return;
-    }
-    var diff = 0;
-    for (var i = 0; i < 32; i++) {
-      diff |= confirm.mac[i] ^ _expectedPeerMac![i];
-    }
-    if (diff != 0) {
+    // Constant-time compare (uses crypto.dart helper)
+    if (!constantTimeMacEqual(confirm.mac, _expectedPeerMac!)) {
       _setError('Handshake MAC mismatch — possible MITM');
       _channel = null;
       _expectedPeerMac = null;
@@ -426,7 +419,7 @@ class RelaySession extends ChangeNotifier {
 
     _expectedPeerMac = null;
     _setState(SessionState.connected);
-    debugPrint('[session] E2E channel established');
+    log('[session] E2E channel established');
   }
 
   // ---------------------------------------------------------------------------
@@ -453,7 +446,7 @@ class RelaySession extends ChangeNotifier {
           break;
       }
     } catch (e) {
-      debugPrint('[session] decrypt error: $e');
+      log('[session] decrypt error: $e');
     }
   }
 
@@ -467,7 +460,7 @@ class RelaySession extends ChangeNotifier {
       final sealed = await _channel!.seal(PtyInput(data));
       _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
     } catch (e) {
-      debugPrint('[session] seal error: $e');
+      log('[session] seal error: $e');
     }
   }
 
@@ -477,7 +470,7 @@ class RelaySession extends ChangeNotifier {
       final sealed = await _channel!.seal(Resize(cols: cols, rows: rows));
       _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
     } catch (e) {
-      debugPrint('[session] seal error: $e');
+      log('[session] seal error: $e');
     }
   }
 
@@ -498,7 +491,7 @@ class RelaySession extends ChangeNotifier {
       _client!.resumeHeartbeat();
     } else if (clientState != ConnectionState.connecting) {
       // Connection died while backgrounded, reconnect immediately
-      debugPrint('[session] connection lost while backgrounded, reconnecting');
+      log('[session] connection lost while backgrounded, reconnecting');
       _client!.reconnectNow();
     }
   }
@@ -519,10 +512,15 @@ class RelaySession extends ChangeNotifier {
 
     _handshakeTimer?.cancel();
     _handshakeTimer = null;
+    _channel?.dispose();
     _channel = null;
     _expectedPeerMac = null;
     _frameQueue.clear();
     _processingHandshake = false;
+    // Zero out ephemeral key material
+    zeroOut(_localKey?.secret);
+    zeroOut(_localKey?.public_);
+    _localKey = null;
     await _client?.disconnect();
     if (!_disposed) _setState(SessionState.disconnected);
   }
@@ -531,9 +529,14 @@ class RelaySession extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _handshakeTimer?.cancel();
+    _channel?.dispose();
     _channel = null;
     _expectedPeerMac = null;
     _frameQueue.clear();
+    // Zero out ephemeral key material
+    zeroOut(_localKey?.secret);
+    zeroOut(_localKey?.public_);
+    _localKey = null;
     _client?.dispose();
     _outputController.close();
     _eventController.close();

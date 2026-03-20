@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../core/log.dart';
 import '../core/protocol.dart';
 
 /// Configuration for reconnect behavior.
@@ -82,7 +83,7 @@ class RelayClient extends ChangeNotifier {
 
   void _setState(ConnectionState s) {
     if (_disposed) return;
-    debugPrint('[relay] state: $s');
+    log('[relay] state: $s');
     _state = s;
     notifyListeners();
   }
@@ -140,11 +141,11 @@ class RelayClient extends ChangeNotifier {
               onMessage?.call(msg);
             }
           } catch (e) {
-            debugPrint('[relay] decode error: $e');
+            log('[relay] decode error: $e');
           }
         },
         onError: (e) {
-          debugPrint('[relay] ws error: $e');
+          log('[relay] ws error: $e');
           if (!registeredCompleter.isCompleted) {
             registeredCompleter.completeError(e);
           } else {
@@ -152,7 +153,7 @@ class RelayClient extends ChangeNotifier {
           }
         },
         onDone: () {
-          debugPrint('[relay] ws closed');
+          log('[relay] ws closed');
           if (!registeredCompleter.isCompleted) {
             registeredCompleter.completeError(
               Exception('WebSocket closed during registration'),
@@ -180,7 +181,7 @@ class RelayClient extends ChangeNotifier {
         (_) => send(RelayPing(DateTime.now().millisecondsSinceEpoch)),
       );
 
-      debugPrint('[relay] connected, peer_online=${_registered!.peerOnline}');
+      log('[relay] connected, peer_online=${_registered!.peerOnline}');
 
       // Deliver buffered messages
       for (final msg in buffered) {
@@ -190,7 +191,7 @@ class RelayClient extends ChangeNotifier {
       // Notify session
       onConnected?.call();
     } catch (e) {
-      debugPrint('[relay] connect failed: $e');
+      log('[relay] connect failed: $e');
       _lastError = e.toString();
       _handleDisconnect();
     }
@@ -211,7 +212,7 @@ class RelayClient extends ChangeNotifier {
     _setState(ConnectionState.reconnecting);
     final delay = _reconnectConfig.delayForAttempt(_reconnectAttempt);
     _reconnectAttempt++;
-    debugPrint('[relay] reconnecting in ${delay.inMilliseconds}ms '
+    log('[relay] reconnecting in ${delay.inMilliseconds}ms '
         '(attempt $_reconnectAttempt/${_reconnectConfig.maxAttempts})');
 
     Future.delayed(delay, () {
@@ -237,7 +238,7 @@ class RelayClient extends ChangeNotifier {
     try {
       _channel!.sink.add(bytes);
     } catch (e) {
-      debugPrint('[relay] send error: $e');
+      log('[relay] send error: $e');
     }
   }
 
@@ -257,7 +258,7 @@ class RelayClient extends ChangeNotifier {
     if (_disposed || _intentionalClose) return;
     if (_state == ConnectionState.connected) return;
     if (_lastRequest == null) return;
-    debugPrint('[relay] reconnectNow requested');
+    log('[relay] reconnectNow requested');
     _reconnectAttempt = 0;
     _connectOnce(_lastRequest!);
   }

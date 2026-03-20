@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../core/log.dart';
 import '../../core/pairing.dart';
 import '../../core/protocol.dart';
 import '../../core/session_history.dart';
@@ -107,11 +108,11 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
-        debugPrint('[lifecycle] app backgrounded, pausing heartbeat');
+        log('[lifecycle] app backgrounded, pausing heartbeat');
         _session.pauseHeartbeat();
 
       case AppLifecycleState.resumed:
-        debugPrint('[lifecycle] app resumed, checking connection');
+        log('[lifecycle] app resumed, checking connection');
         _session.resumeOrReconnect();
 
       case AppLifecycleState.inactive:

@@ -75,10 +75,14 @@ class RelayClient extends ChangeNotifier {
   /// Called when connection is lost (before reconnect attempt).
   void Function()? onDisconnected;
 
+  final String? _apiKey;
+
   RelayClient({
     required String relayUrl,
+    String? apiKey,
     ReconnectConfig reconnectConfig = const ReconnectConfig(),
   })  : _relayUrl = relayUrl,
+        _apiKey = apiKey,
         _reconnectConfig = reconnectConfig;
 
   void _setState(ConnectionState s) {
@@ -105,7 +109,14 @@ class RelayClient extends ChangeNotifier {
     try {
       await _teardownChannel();
 
-      final wsUrl = Uri.parse(_relayUrl);
+      var wsUrl = Uri.parse(_relayUrl);
+      // Append API key as query parameter if available.
+      if (_apiKey != null) {
+        wsUrl = wsUrl.replace(queryParameters: {
+          ...wsUrl.queryParameters,
+          'api_key': _apiKey,
+        });
+      }
       // Use IOWebSocketChannel for transport-level ping/pong.
       // pingInterval keeps the TCP connection alive through mobile
       // networks and proxies that kill idle connections.

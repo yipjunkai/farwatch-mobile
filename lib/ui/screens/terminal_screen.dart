@@ -7,8 +7,8 @@ import 'package:xterm/xterm.dart';
 
 import '../../core/pairing.dart';
 import '../../core/protocol.dart';
+import '../../core/session_history.dart';
 import '../../relay/session.dart';
-import 'scan_screen.dart';
 
 class TerminalScreen extends StatefulWidget {
   final PairingUri pairing;
@@ -52,6 +52,11 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
       switch (msg) {
         case SessionEnded(exitCode: final code):
           _showSnackBar('Session ended (exit code: $code)');
+          SessionHistory.update(
+            widget.pairing.sessionId,
+            lastActiveAt: DateTime.now(),
+            endReason: SessionEndReason.hostEnded,
+          );
         case VersionNotice(minimumVersion: final v):
           _showSnackBar('Minimum version required: $v');
         default:
@@ -64,6 +69,26 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
 
   void _onStateChanged() {
     if (mounted) setState(() {});
+
+    // Persist session history on key state transitions
+    final state = _session.state;
+    if (state == SessionState.connected) {
+      _saveSessionRecord();
+    } else if (state == SessionState.error) {
+      SessionHistory.update(
+        widget.pairing.sessionId,
+        lastActiveAt: DateTime.now(),
+        endReason: SessionEndReason.connectionLost,
+      );
+    }
+  }
+
+  void _saveSessionRecord() {
+    final record = SessionRecord.fromPairing(widget.pairing).copyWith(
+      toolName: _session.toolName,
+      lastActiveAt: DateTime.now(),
+    );
+    SessionHistory.upsert(record);
   }
 
   void _showSnackBar(String text) {
@@ -127,6 +152,11 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
 
     if (shouldDisconnect == true) {
       await _session.disconnect();
+      SessionHistory.update(
+        widget.pairing.sessionId,
+        lastActiveAt: DateTime.now(),
+        endReason: SessionEndReason.userDisconnected,
+      );
       return true;
     }
     return false;
@@ -149,9 +179,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   void _close() async {
     if (await _onBackPressed()) {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const ScanScreen()),
-        );
+        Navigator.of(context).pop();
       }
     }
   }
@@ -322,9 +350,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
         if (didPop) return;
         if (await _onBackPressed()) {
           if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const ScanScreen()),
-            );
+            Navigator.of(context).pop();
           }
         }
       },

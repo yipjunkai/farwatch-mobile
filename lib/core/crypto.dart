@@ -127,13 +127,32 @@ Future<bool> verifyHandshakeMac({
     remotePublic: localPublic,
     sessionId: sessionId,
   );
-  if (expected.length != receivedMac.length) return false;
-  // Constant-time comparison
+  return constantTimeMacEqual(expected, receivedMac);
+}
+
+// ---------------------------------------------------------------------------
+// Constant-time MAC comparison
+// ---------------------------------------------------------------------------
+
+/// Constant-time comparison of two MACs. Returns true if equal.
+/// Does not short-circuit on the first differing byte.
+bool constantTimeMacEqual(Uint8List a, Uint8List b) {
+  if (a.length != b.length) return false;
   var diff = 0;
-  for (var i = 0; i < expected.length; i++) {
-    diff |= expected[i] ^ receivedMac[i];
+  for (var i = 0; i < a.length; i++) {
+    diff |= a[i] ^ b[i];
   }
   return diff == 0;
+}
+
+// ---------------------------------------------------------------------------
+// Key material cleanup
+// ---------------------------------------------------------------------------
+
+/// Overwrite a byte buffer with zeros to clear sensitive key material.
+void zeroOut(Uint8List? bytes) {
+  if (bytes == null) return;
+  bytes.fillRange(0, bytes.length, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +168,12 @@ class SecureChannel {
   SecureChannel(SessionKeys keys)
       : _txKey = keys.tx,
         _rxKey = keys.rx;
+
+  /// Zero out key material when the channel is no longer needed.
+  void dispose() {
+    zeroOut(_txKey);
+    zeroOut(_rxKey);
+  }
 
   /// Encrypt a SecureMessage into a SealedFrame.
   Future<SealedFrame> seal(SecureMessage message) async {

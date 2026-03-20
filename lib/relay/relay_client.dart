@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../core/protocol.dart';
@@ -103,8 +105,13 @@ class RelayClient extends ChangeNotifier {
       await _teardownChannel();
 
       final wsUrl = Uri.parse(_relayUrl);
-      _channel = WebSocketChannel.connect(wsUrl);
-      await _channel!.ready.timeout(const Duration(seconds: 15));
+      // Use IOWebSocketChannel for transport-level ping/pong.
+      // pingInterval keeps the TCP connection alive through mobile
+      // networks and proxies that kill idle connections.
+      final rawSocket = await WebSocket.connect(wsUrl.toString())
+          .timeout(const Duration(seconds: 15));
+      rawSocket.pingInterval = const Duration(seconds: 15);
+      _channel = IOWebSocketChannel(rawSocket);
 
       // Registration phase: collect messages until we get Registered.
       final registeredCompleter = Completer<RegisterResponse>();

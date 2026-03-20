@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/pairing.dart';
-import 'ui/screens/scan_screen.dart';
+import 'ui/screens/home_screen.dart';
 import 'ui/screens/terminal_screen.dart';
 
 void main() {
@@ -66,7 +66,7 @@ class _TerminalRelayAppState extends State<TerminalRelayApp> {
   }
 
   void _navigateToTerminal(PairingUri pairing) {
-    _navigatorKey.currentState?.pushReplacement(
+    _navigatorKey.currentState?.push(
       MaterialPageRoute(builder: (_) => TerminalScreen(pairing: pairing)),
     );
   }
@@ -83,7 +83,7 @@ class _TerminalRelayAppState extends State<TerminalRelayApp> {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.black,
       ),
-      home: const ScanScreen(),
+      home: const HomeScreen(),
     );
   }
 }

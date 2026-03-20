@@ -320,6 +320,17 @@ class RelaySession extends ChangeNotifier {
     debugPrint('[session] peer handshake: fp=${handshake.fingerprint} '
         'tool=${handshake.toolName} key_len=${handshake.publicKey.length}');
 
+    // Ignore duplicate handshakes if we already have a channel (in-progress
+    // or confirmed) or if we're currently processing one. This handles the
+    // dual-handshake race where both sides send Handshake simultaneously —
+    // the first one processed wins, and the second is safely dropped.
+    if (_channel != null || _processingHandshake) {
+      debugPrint('[session] ignoring duplicate handshake '
+          '(channel=${_channel != null}, processing=$_processingHandshake, '
+          'state=$_state)');
+      return;
+    }
+
     // Validate timestamp
     final now = DateTime.now().millisecondsSinceEpoch;
     final age = now - handshake.timestampMs;

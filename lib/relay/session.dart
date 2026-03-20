@@ -157,7 +157,7 @@ class RelaySession extends ChangeNotifier {
 
       // Create relay client
       _client?.dispose();
-      _client = RelayClient(relayUrl: pairing.relayUrl);
+      _client = RelayClient(relayUrl: pairing.relayUrl, apiKey: pairing.apiKey);
       _client!.onMessage = _onRelayMessage;
       _client!.onConnected = _onRelayConnected;
       _client!.onDisconnected = _onRelayDisconnected;

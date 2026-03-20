@@ -1,16 +1,18 @@
-// Pairing URI: termrelay://pair?relay=...&session=...&code=...&fingerprint=...
+// Pairing URI: termrelay://pair?relay=...&session=...&code=...&fingerprint=...&key=...
 
 class PairingUri {
   final String relayUrl;
   final String sessionId;
   final String pairingCode;
   final String? expectedFingerprint;
+  final String? apiKey;
 
   PairingUri({
     required this.relayUrl,
     required this.sessionId,
     required this.pairingCode,
     this.expectedFingerprint,
+    this.apiKey,
   });
 
   /// Build a termrelay:// URI string.
@@ -20,6 +22,7 @@ class PairingUri {
       'session': sessionId,
       'code': pairingCode,
       if (expectedFingerprint != null) 'fingerprint': expectedFingerprint,
+      if (apiKey != null) 'key': apiKey,
     };
     final query = params.entries
         .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value as String)}')
@@ -38,6 +41,7 @@ class PairingUri {
     final session = uri.queryParameters['session'];
     final code = uri.queryParameters['code'];
     final fingerprint = uri.queryParameters['fingerprint'];
+    final key = uri.queryParameters['key'];
 
     if (relay == null || session == null || code == null) {
       throw FormatException('Missing required pairing URI parameters');
@@ -48,6 +52,7 @@ class PairingUri {
       sessionId: session,
       pairingCode: code,
       expectedFingerprint: fingerprint,
+      apiKey: key,
     );
   }
 }

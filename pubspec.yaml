@@ -26,6 +26,9 @@ dependencies:
   # QR code scanning
   mobile_scanner: ^6.0.0
 
+  # Speech-to-text (on-device recognition)
+  speech_to_text: ^7.0.0
+
   # State management
   provider: ^6.1.2
 

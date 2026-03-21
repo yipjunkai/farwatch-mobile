@@ -58,6 +58,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Terminal Relay uses speech recognition to convert your voice into terminal commands.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Terminal Relay needs microphone access for voice-to-text input.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

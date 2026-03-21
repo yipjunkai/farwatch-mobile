@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../core/log.dart';
@@ -27,6 +29,17 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   StreamSubscription? _eventSub;
   bool _toolbarVisible = false;
 
+  // Speech-to-text
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _speechAvailable = false;
+  bool _isListening = false;
+  String _liveTranscript = '';
+  double _confidence = 0.0;
+
+  // Compose bar (shown after STT finishes)
+  bool _composeVisible = false;
+  final TextEditingController _composeController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +57,8 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
 
     _session = RelaySession(pairing: widget.pairing);
     _session.addListener(_onStateChanged);
+
+    _initSpeech();
 
     _outputSub = _session.output.listen((bytes) {
       _terminal.write(utf8.decode(bytes, allowMalformed: true));
@@ -66,6 +81,102 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     });
 
     _session.connect();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Speech-to-text
+  // ---------------------------------------------------------------------------
+
+  Future<void> _initSpeech() async {
+    _speechAvailable = await _speech.initialize(
+      onStatus: (status) {
+        log('[stt] status: $status');
+        if (status == 'notListening' && _isListening) {
+          // Recognition stopped (e.g. silence timeout) — finalize
+          setState(() => _isListening = false);
+          _onSpeechDone();
+        }
+      },
+      onError: (error) {
+        log('[stt] error: ${error.errorMsg}');
+        setState(() => _isListening = false);
+        if (_liveTranscript.isNotEmpty) {
+          _onSpeechDone();
+        }
+      },
+    );
+    log('[stt] available: $_speechAvailable');
+    if (mounted) setState(() {});
+  }
+
+  void _startListening() {
+    if (!_speechAvailable || _isListening) return;
+    HapticFeedback.heavyImpact();
+    setState(() {
+      _isListening = true;
+      _liveTranscript = '';
+      _confidence = 0.0;
+      _composeVisible = false;
+    });
+    _speech.listen(
+      onResult: _onSpeechResult,
+      listenOptions: stt.SpeechListenOptions(
+        listenMode: stt.ListenMode.dictation,
+        cancelOnError: false,
+        partialResults: true,
+      ),
+    );
+  }
+
+  void _stopListening() {
+    if (!_isListening) return;
+    _speech.stop();
+    setState(() => _isListening = false);
+    _onSpeechDone();
+  }
+
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    setState(() {
+      _liveTranscript = result.recognizedWords;
+      if (result.hasConfidenceRating) {
+        _confidence = result.confidence;
+      }
+    });
+  }
+
+  void _onSpeechDone() {
+    if (_liveTranscript.trim().isEmpty) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _composeVisible = true;
+      _composeController.text = _liveTranscript.trim();
+      _composeController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _composeController.text.length),
+      );
+    });
+  }
+
+  void _sendComposedText() {
+    final text = _composeController.text.trim();
+    if (text.isEmpty) return;
+    HapticFeedback.lightImpact();
+    _session.sendVoiceCommand(
+      transcript: text,
+      confidence: _confidence,
+    );
+    setState(() {
+      _composeVisible = false;
+      _composeController.clear();
+      _liveTranscript = '';
+    });
+  }
+
+  void _cancelCompose() {
+    setState(() {
+      _composeVisible = false;
+      _composeController.clear();
+      _liveTranscript = '';
+    });
   }
 
   void _onStateChanged() {
@@ -173,6 +284,8 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     _session.removeListener(_onStateChanged);
     _outputSub?.cancel();
     _eventSub?.cancel();
+    _composeController.dispose();
+    if (_isListening) _speech.stop();
     _session.dispose();
     super.dispose();
   }
@@ -343,8 +456,108 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   // Build
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // Compose bar (editable preview of transcribed speech)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildComposeBar() {
+    return Container(
+      color: Colors.grey[900],
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+              onPressed: _cancelCompose,
+              tooltip: 'Cancel',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: TextField(
+                controller: _composeController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Edit command...',
+                  hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  filled: true,
+                  fillColor: Colors.grey[800],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onSubmitted: (_) => _sendComposedText(),
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.send, color: Colors.greenAccent, size: 22),
+              onPressed: _sendComposedText,
+              tooltip: 'Send',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Live listening overlay (shown while recording)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildListeningOverlay() {
+    return Positioned(
+      bottom: _toolbarVisible ? 120 : 80,
+      left: 24,
+      right: 24,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey[900]?.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            const _PulsingDot(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _liveTranscript.isEmpty ? 'Listening...' : _liveTranscript,
+                style: TextStyle(
+                  color: _liveTranscript.isEmpty ? Colors.grey[400] : Colors.white,
+                  fontSize: 14,
+                  fontStyle: _liveTranscript.isEmpty ? FontStyle.italic : FontStyle.normal,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+    final showMicFab = _speechAvailable &&
+        _session.state == SessionState.connected &&
+        !_composeVisible;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -356,6 +569,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: Colors.black,
         appBar: AppBar(
           title: const Text('Terminal'),
@@ -382,17 +596,101 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
             ),
           ],
         ),
-        body: Column(
+        body: Stack(
           children: [
-            _buildStatusBar(),
-            Expanded(
-              child: TerminalView(
-                _terminal,
-                autofocus: true,
-              ),
+            // Main content — terminal + toolbar never shift
+            Column(
+              children: [
+                _buildStatusBar(),
+                Expanded(
+                  child: TerminalView(
+                    _terminal,
+                    autofocus: !_composeVisible,
+                  ),
+                ),
+                if (_toolbarVisible) _buildToolbar(),
+              ],
             ),
-            if (_toolbarVisible) _buildToolbar(),
+            // Compose bar floats above keyboard
+            if (_composeVisible)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                child: _buildComposeBar(),
+              ),
+            // Live transcript overlay while listening
+            if (_isListening) _buildListeningOverlay(),
+            // Floating mic button
+            if (showMicFab)
+              Positioned(
+                right: 16,
+                bottom: (_toolbarVisible ? 100 : 24) +
+                    MediaQuery.of(context).padding.bottom,
+                child: FloatingActionButton(
+                  backgroundColor: _isListening ? Colors.redAccent : Colors.grey[800],
+                  onPressed: () {
+                    if (_isListening) {
+                      _stopListening();
+                    } else {
+                      _startListening();
+                    }
+                  },
+                  tooltip: _isListening ? 'Tap to stop' : 'Tap to speak',
+                  child: Icon(
+                    _isListening ? Icons.mic : Icons.mic_none,
+                    color: _isListening ? Colors.white : Colors.grey[400],
+                    size: 24,
+                  ),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pulsing red dot indicator for active recording
+// ---------------------------------------------------------------------------
+
+class _PulsingDot extends StatefulWidget {
+  const _PulsingDot();
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.redAccent.withValues(alpha: 0.5 + _controller.value * 0.5),
         ),
       ),
     );

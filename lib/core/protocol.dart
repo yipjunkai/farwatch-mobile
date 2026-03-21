@@ -342,6 +342,13 @@ class ReadOnlyMsg extends SecureMessage {
   ReadOnlyMsg(this.enabled);
 }
 
+class VoiceCommand extends SecureMessage {
+  final String transcript;
+  final String? intent;
+  final double confidence;
+  VoiceCommand({required this.transcript, this.intent, required this.confidence});
+}
+
 class UnknownMessage extends SecureMessage {
   final Uint8List raw;
   UnknownMessage(this.raw);
@@ -431,6 +438,8 @@ Uint8List encodeSecureMessage(SecureMessage msg) {
     SessionEnded(exitCode: final c)             => {'SessionEnded': {'exit_code': c}},
     ClipboardMsg(content: final c)              => {'Clipboard': {'content': c}},
     ReadOnlyMsg(enabled: final e)               => {'ReadOnly': {'enabled': e}},
+    VoiceCommand(transcript: final t, intent: final i, confidence: final c) =>
+      {'VoiceCommand': {'transcript': t, 'intent': i, 'confidence': c}},
     UnknownMessage(raw: final r)                => {'Unknown': r},
   };
   return msgpack.serialize(map);
@@ -463,6 +472,11 @@ SecureMessage decodeSecureMessage(Uint8List bytes) {
       'SessionEnded'   => SessionEnded((value as Map)['exit_code'] as int),
       'Clipboard'      => ClipboardMsg((value as Map)['content'] as String),
       'ReadOnly'       => ReadOnlyMsg((value as Map)['enabled'] as bool),
+      'VoiceCommand'   => VoiceCommand(
+                            transcript: (value as Map)['transcript'] as String,
+                            intent: value['intent'] as String?,
+                            confidence: (value['confidence'] as num).toDouble(),
+                          ),
       _                => UnknownMessage(bytes),
     };
   } catch (_) {

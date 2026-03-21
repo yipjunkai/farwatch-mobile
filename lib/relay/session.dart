@@ -443,7 +443,7 @@ class RelaySession extends ChangeNotifier {
         case VersionNotice() || ClipboardMsg() || ReadOnlyMsg():
           _eventController.add(msg);
 
-        case PtyInput() || Resize() || Heartbeat() || UnknownMessage():
+        case PtyInput() || Resize() || Heartbeat() || VoiceCommand() || UnknownMessage():
           break;
       }
     } catch (e) {
@@ -469,6 +469,25 @@ class RelaySession extends ChangeNotifier {
     if (_state != SessionState.connected || _channel == null) return;
     try {
       final sealed = await _channel!.seal(Resize(cols: cols, rows: rows));
+      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
+    } catch (e) {
+      log('[session] seal error: $e');
+    }
+  }
+
+  Future<void> sendVoiceCommand({
+    required String transcript,
+    String? intent,
+    required double confidence,
+  }) async {
+    if (_state != SessionState.connected || _channel == null) return;
+    try {
+      final msg = VoiceCommand(
+        transcript: transcript,
+        intent: intent,
+        confidence: confidence,
+      );
+      final sealed = await _channel!.seal(msg);
       _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
     } catch (e) {
       log('[session] seal error: $e');

@@ -194,6 +194,16 @@ class RelayPong extends RelayMessage {
   Map<String, dynamic> encode() => {'Pong': timestamp};
 }
 
+/// Unknown relay message variant — for forward compatibility.
+/// Silently ignored by the client.
+class RelayUnknown extends RelayMessage {
+  final String variant;
+  RelayUnknown(this.variant);
+
+  @override
+  Map<String, dynamic> encode() => {'Unknown': variant};
+}
+
 class RelayErrorMsg extends RelayMessage {
   final RelayError error;
   RelayErrorMsg(this.error);
@@ -285,6 +295,9 @@ class PeerFrameSecure extends PeerFrame {
 
 class PeerFrameKeepAlive extends PeerFrame {}
 
+/// Unknown peer frame variant — for forward compatibility.
+class PeerFrameUnknown extends PeerFrame {}
+
 // ---------------------------------------------------------------------------
 // SecureMessage (inner encrypted payload)
 // ---------------------------------------------------------------------------
@@ -358,7 +371,7 @@ RelayMessage decodeRelay(Uint8List bytes) {
     'Ping'       => RelayPing(value as int),
     'Pong'       => RelayPong(value as int),
     'Error'      => RelayErrorMsg.fromValue(value),
-    _            => throw FormatException('Unknown RelayMessage variant: $key'),
+    _            => RelayUnknown(key),
   };
 }
 
@@ -373,6 +386,7 @@ Uint8List encodePeerFrame(PeerFrame frame) {
     PeerFrameHandshakeConfirm(confirm: final c) => {'HandshakeConfirm': c.toMap()},
     PeerFrameSecure(frame: final f) => {'Secure': f.toMap()},
     PeerFrameKeepAlive() => throw StateError('unreachable'),
+    PeerFrameUnknown() => throw StateError('cannot encode unknown frame'),
   };
   return msgpack.serialize(map);
 }
@@ -384,11 +398,11 @@ PeerFrame decodePeerFrame(Uint8List bytes) {
   if (decoded is String) {
     return switch (decoded) {
       'KeepAlive' => PeerFrameKeepAlive(),
-      _ => throw FormatException('Unknown PeerFrame unit variant: $decoded'),
+      _ => PeerFrameUnknown(),
     };
   }
 
-  if (decoded is! Map) throw FormatException('Expected map or string for PeerFrame, got ${decoded.runtimeType}');
+  if (decoded is! Map) return PeerFrameUnknown();
 
   final entry = decoded.entries.first;
   final key = entry.key as String;
@@ -399,7 +413,7 @@ PeerFrame decodePeerFrame(Uint8List bytes) {
     'HandshakeConfirm' => PeerFrameHandshakeConfirm(HandshakeConfirm.fromMap(value as Map)),
     'Secure'           => PeerFrameSecure(SealedFrame.fromMap(value as Map)),
     'KeepAlive'        => PeerFrameKeepAlive(),
-    _                  => throw FormatException('Unknown PeerFrame variant: $key'),
+    _                  => PeerFrameUnknown(),
   };
 }
 

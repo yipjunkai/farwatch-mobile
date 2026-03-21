@@ -238,7 +238,7 @@ class RelaySession extends ChangeNotifier {
       case RelayErrorMsg(error: final err):
         _setError(err.message);
 
-      case RelayPing() || RelayPong() || RelayRegistered() || RelayRegister():
+      case RelayPing() || RelayPong() || RelayRegistered() || RelayRegister() || RelayUnknown():
         break;
     }
   }
@@ -296,6 +296,7 @@ class RelaySession extends ChangeNotifier {
         _onSecureFrame(sealed);
 
       case PeerFrameKeepAlive():
+      case PeerFrameUnknown():
         break;
     }
   }

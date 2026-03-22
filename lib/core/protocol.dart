@@ -349,6 +349,86 @@ class VoiceCommand extends SecureMessage {
   VoiceCommand({required this.transcript, this.intent, required this.confidence});
 }
 
+// ── Structured agent events (for rich clients) ──
+
+/// Structured event from an AI agent, emitted by the host in structured mode.
+sealed class AgentEvent extends SecureMessage {}
+
+class AgentSessionInit extends AgentEvent {
+  final String sessionId;
+  final String model;
+  final List<String> tools;
+  AgentSessionInit({required this.sessionId, required this.model, required this.tools});
+}
+
+class AgentTurnStarted extends AgentEvent {}
+
+class AgentTextDelta extends AgentEvent {
+  final String text;
+  AgentTextDelta({required this.text});
+}
+
+class AgentThinkingDelta extends AgentEvent {
+  final String text;
+  AgentThinkingDelta({required this.text});
+}
+
+class AgentTextBlock extends AgentEvent {
+  final String text;
+  AgentTextBlock({required this.text});
+}
+
+class AgentToolUseStart extends AgentEvent {
+  final String id;
+  final String name;
+  final String input;
+  AgentToolUseStart({required this.id, required this.name, required this.input});
+}
+
+class AgentToolResult extends AgentEvent {
+  final String id;
+  final String content;
+  final bool isError;
+  AgentToolResult({required this.id, required this.content, required this.isError});
+}
+
+class AgentTurnCompleted extends AgentEvent {
+  final String status;
+  AgentTurnCompleted({required this.status});
+}
+
+class AgentSessionResult extends AgentEvent {
+  final String result;
+  final bool isError;
+  final int durationMs;
+  final int numTurns;
+  AgentSessionResult({
+    required this.result,
+    required this.isError,
+    required this.durationMs,
+    required this.numTurns,
+  });
+}
+
+/// Command from a rich client to control the agent session.
+sealed class AgentCommand extends SecureMessage {}
+
+class AgentPrompt extends AgentCommand {
+  final String text;
+  AgentPrompt({required this.text});
+}
+
+class AgentApproveToolUse extends AgentCommand {
+  final String id;
+  AgentApproveToolUse({required this.id});
+}
+
+class AgentDenyToolUse extends AgentCommand {
+  final String id;
+  final String? reason;
+  AgentDenyToolUse({required this.id, this.reason});
+}
+
 class UnknownMessage extends SecureMessage {
   final Uint8List raw;
   UnknownMessage(this.raw);
@@ -440,9 +520,39 @@ Uint8List encodeSecureMessage(SecureMessage msg) {
     ReadOnlyMsg(enabled: final e)               => {'ReadOnly': {'enabled': e}},
     VoiceCommand(transcript: final t, intent: final i, confidence: final c) =>
       {'VoiceCommand': {'transcript': t, 'intent': i, 'confidence': c}},
+    // ── Structured agent types ──
+    AgentEvent evt => {'AgentEvent': _encodeAgentEvent(evt)},
+    AgentCommand cmd => {'AgentCommand': _encodeAgentCommand(cmd)},
     UnknownMessage(raw: final r)                => {'Unknown': r},
   };
   return msgpack.serialize(map);
+}
+
+Map<String, dynamic> _encodeAgentEvent(AgentEvent evt) {
+  return switch (evt) {
+    AgentSessionInit(sessionId: final s, model: final m, tools: final t) =>
+      {'SessionInit': {'session_id': s, 'model': m, 'tools': t}},
+    AgentTurnStarted() => {'TurnStarted': null},
+    AgentTextDelta(text: final t) => {'TextDelta': {'text': t}},
+    AgentThinkingDelta(text: final t) => {'ThinkingDelta': {'text': t}},
+    AgentTextBlock(text: final t) => {'TextBlock': {'text': t}},
+    AgentToolUseStart(id: final i, name: final n, input: final inp) =>
+      {'ToolUseStart': {'id': i, 'name': n, 'input': inp}},
+    AgentToolResult(id: final i, content: final c, isError: final e) =>
+      {'ToolResult': {'id': i, 'content': c, 'is_error': e}},
+    AgentTurnCompleted(status: final s) => {'TurnCompleted': {'status': s}},
+    AgentSessionResult(result: final r, isError: final e, durationMs: final d, numTurns: final n) =>
+      {'SessionResult': {'result': r, 'is_error': e, 'duration_ms': d, 'num_turns': n}},
+  };
+}
+
+Map<String, dynamic> _encodeAgentCommand(AgentCommand cmd) {
+  return switch (cmd) {
+    AgentPrompt(text: final t) => {'Prompt': {'text': t}},
+    AgentApproveToolUse(id: final i) => {'ApproveToolUse': {'id': i}},
+    AgentDenyToolUse(id: final i, reason: final r) =>
+      {'DenyToolUse': {'id': i, 'reason': r}},
+  };
 }
 
 SecureMessage decodeSecureMessage(Uint8List bytes) {
@@ -477,12 +587,82 @@ SecureMessage decodeSecureMessage(Uint8List bytes) {
                             intent: value['intent'] as String?,
                             confidence: (value['confidence'] as num).toDouble(),
                           ),
+      'AgentEvent'     => _decodeAgentEvent(value),
+      'AgentCommand'   => _decodeAgentCommand(value),
       _                => UnknownMessage(bytes),
     };
   } catch (_) {
     // Forward compatibility: unrecognized data becomes Unknown.
     return UnknownMessage(bytes);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Agent event / command decoders
+// ---------------------------------------------------------------------------
+
+AgentEvent _decodeAgentEvent(dynamic raw) {
+  // Unit variants (e.g. TurnStarted) are serialized as bare strings by Rust's rmp_serde.
+  if (raw is String) {
+    return switch (raw) {
+      'TurnStarted' => AgentTurnStarted(),
+      _ => AgentTurnStarted(), // forward compat
+    };
+  }
+
+  if (raw is! Map) return AgentTurnStarted();
+
+  final entry = raw.entries.first;
+  final key = entry.key as String;
+  final value = entry.value;
+
+  return switch (key) {
+    'SessionInit' => AgentSessionInit(
+      sessionId: (value as Map)['session_id'] as String,
+      model: value['model'] as String,
+      tools: (value['tools'] as List).cast<String>(),
+    ),
+    'TurnStarted' => AgentTurnStarted(),
+    'TextDelta' => AgentTextDelta(text: (value as Map)['text'] as String),
+    'ThinkingDelta' => AgentThinkingDelta(text: (value as Map)['text'] as String),
+    'TextBlock' => AgentTextBlock(text: (value as Map)['text'] as String),
+    'ToolUseStart' => AgentToolUseStart(
+      id: (value as Map)['id'] as String,
+      name: value['name'] as String,
+      input: value['input'] as String,
+    ),
+    'ToolResult' => AgentToolResult(
+      id: (value as Map)['id'] as String,
+      content: value['content'] as String,
+      isError: value['is_error'] as bool,
+    ),
+    'TurnCompleted' => AgentTurnCompleted(status: (value as Map)['status'] as String),
+    'SessionResult' => AgentSessionResult(
+      result: (value as Map)['result'] as String,
+      isError: value['is_error'] as bool,
+      durationMs: value['duration_ms'] as int,
+      numTurns: value['num_turns'] as int,
+    ),
+    _ => AgentTurnStarted(), // forward compat
+  };
+}
+
+AgentCommand _decodeAgentCommand(dynamic raw) {
+  if (raw is! Map) return AgentPrompt(text: '');
+
+  final entry = raw.entries.first;
+  final key = entry.key as String;
+  final value = entry.value;
+
+  return switch (key) {
+    'Prompt' => AgentPrompt(text: (value as Map)['text'] as String),
+    'ApproveToolUse' => AgentApproveToolUse(id: (value as Map)['id'] as String),
+    'DenyToolUse' => AgentDenyToolUse(
+      id: (value as Map)['id'] as String,
+      reason: value['reason'] as String?,
+    ),
+    _ => AgentPrompt(text: ''),
+  };
 }
 
 // ---------------------------------------------------------------------------

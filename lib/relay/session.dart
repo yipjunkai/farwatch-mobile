@@ -53,6 +53,8 @@ class RelaySession extends ChangeNotifier {
   String? get error => _error;
   String? _toolName;
   String? get toolName => _toolName;
+  /// Whether the connected host tool supports structured agent events.
+  bool get isStructuredTool => _toolName == 'claude';
   bool _disposed = false;
 
   // Transport
@@ -443,7 +445,11 @@ class RelaySession extends ChangeNotifier {
         case VersionNotice() || ClipboardMsg() || ReadOnlyMsg():
           _eventController.add(msg);
 
-        case PtyInput() || Resize() || Heartbeat() || VoiceCommand() || UnknownMessage():
+        // Structured agent events → event stream for native UI rendering.
+        case AgentEvent():
+          _eventController.add(msg);
+
+        case PtyInput() || Resize() || Heartbeat() || VoiceCommand() || AgentCommand() || UnknownMessage():
           break;
       }
     } catch (e) {
@@ -487,6 +493,42 @@ class RelaySession extends ChangeNotifier {
         intent: intent,
         confidence: confidence,
       );
+      final sealed = await _channel!.seal(msg);
+      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
+    } catch (e) {
+      log('[session] seal error: $e');
+    }
+  }
+
+  /// Send a text prompt to the agent (structured mode).
+  Future<void> sendAgentPrompt(String text) async {
+    if (_state != SessionState.connected || _channel == null) return;
+    try {
+      final msg = AgentPrompt(text: text);
+      final sealed = await _channel!.seal(msg);
+      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
+    } catch (e) {
+      log('[session] seal error: $e');
+    }
+  }
+
+  /// Approve a pending tool invocation (structured mode).
+  Future<void> sendApproveToolUse(String id) async {
+    if (_state != SessionState.connected || _channel == null) return;
+    try {
+      final msg = AgentApproveToolUse(id: id);
+      final sealed = await _channel!.seal(msg);
+      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
+    } catch (e) {
+      log('[session] seal error: $e');
+    }
+  }
+
+  /// Deny a pending tool invocation (structured mode).
+  Future<void> sendDenyToolUse(String id, {String? reason}) async {
+    if (_state != SessionState.connected || _channel == null) return;
+    try {
+      final msg = AgentDenyToolUse(id: id, reason: reason);
       final sealed = await _channel!.seal(msg);
       _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
     } catch (e) {

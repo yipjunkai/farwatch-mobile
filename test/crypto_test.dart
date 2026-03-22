@@ -198,7 +198,7 @@ void main() {
       final sealTest = crypto['seal_test'] as Map<String, dynamic>;
       final hostTxKey = hexToBytes(crypto['host_tx_key'] as String);
       final ciphertext = hexToBytes(sealTest['ciphertext'] as String);
-      final expectedPlaintext = hexToBytes(sealTest['plaintext'] as String);
+      final _ = hexToBytes(sealTest['plaintext'] as String); // verified via decrypt
       final nonce = sealTest['nonce'] as int;
 
       // Use SecureChannel to decrypt

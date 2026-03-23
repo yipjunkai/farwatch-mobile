@@ -314,7 +314,7 @@ class RelaySession extends ChangeNotifier {
       PeerFrameHandshake(Handshake(
         publicKey: _localKey!.public_,
         fingerprint: _localFingerprint!,
-        toolName: 'terminal-relay-app',
+        toolName: 'farwatch-app',
         timestampMs: DateTime.now().millisecondsSinceEpoch,
       )),
     );

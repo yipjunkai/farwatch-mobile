@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:terminal_relay_app/core/crypto.dart';
-import 'package:terminal_relay_app/core/protocol.dart';
+import 'package:farwatch_app/core/crypto.dart';
+import 'package:farwatch_app/core/protocol.dart';
 
 Map<String, dynamic> loadVectors() {
   final file = File('test/fixtures/rust_test_vectors.json');

@@ -145,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             ),
             const SizedBox(height: 12),
             Text(
-              'Run terminal-relay start on your computer,\nthen scan the QR code to connect.',
+              'Run farwatch start on your computer,\nthen scan the QR code to connect.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Terminal Relay'),
+        title: const Text('Farwatch'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
@@ -329,7 +329,7 @@ class _ManualEntrySheetState extends State<_ManualEntrySheet> {
           TextField(
             controller: _controller,
             decoration: const InputDecoration(
-              hintText: 'termrelay://pair?...',
+              hintText: 'farwatch://pair?...',
               border: OutlineInputBorder(),
             ),
             autofocus: true,

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:terminal_relay_app/core/pairing.dart';
+import 'package:farwatch_app/core/pairing.dart';
 
 Map<String, dynamic> loadVectors() {
   final file = File('test/fixtures/rust_test_vectors.json');
@@ -48,7 +48,7 @@ void main() {
   group('Dart build/parse round-trip', () {
     test('round-trips with fingerprint', () {
       final original = PairingUri(
-        relayUrl: 'wss://relay.terminal-relay.dev/ws',
+        relayUrl: 'wss://relay.farwatch.dev/ws',
         sessionId: '550e8400-e29b-41d4-a716-446655440000',
         pairingCode: 'ABCDEF-GHIJKL-MNOPQR',
         expectedFingerprint: 'aaa8fff703b50b22',
@@ -90,28 +90,28 @@ void main() {
 
     test('rejects wrong host', () {
       expect(
-        () => PairingUri.parse('termrelay://wrong?relay=x&session=y&code=z'),
+        () => PairingUri.parse('farwatch://wrong?relay=x&session=y&code=z'),
         throwsA(isA<FormatException>()),
       );
     });
 
     test('rejects missing relay', () {
       expect(
-        () => PairingUri.parse('termrelay://pair?session=y&code=z'),
+        () => PairingUri.parse('farwatch://pair?session=y&code=z'),
         throwsA(isA<FormatException>()),
       );
     });
 
     test('rejects missing session', () {
       expect(
-        () => PairingUri.parse('termrelay://pair?relay=x&code=z'),
+        () => PairingUri.parse('farwatch://pair?relay=x&code=z'),
         throwsA(isA<FormatException>()),
       );
     });
 
     test('rejects missing code', () {
       expect(
-        () => PairingUri.parse('termrelay://pair?relay=x&session=y'),
+        () => PairingUri.parse('farwatch://pair?relay=x&session=y'),
         throwsA(isA<FormatException>()),
       );
     });

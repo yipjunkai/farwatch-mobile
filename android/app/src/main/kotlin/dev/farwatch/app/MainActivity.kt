@@ -1,4 +1,4 @@
-package dev.terminalrelay.terminal_relay_app
+package dev.farwatch.app
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,7 +7,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "dev.terminalrelay/deeplink"
+    private val CHANNEL = "dev.farwatch/deeplink"
     private var initialLink: String? = null
     private var methodChannel: MethodChannel? = null
 
@@ -35,7 +35,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val link = intent.data?.toString()
-        if (link != null && link.startsWith("termrelay://")) {
+        if (link != null && link.startsWith("farwatch://")) {
             methodChannel?.invokeMethod("onNewLink", link)
         }
     }

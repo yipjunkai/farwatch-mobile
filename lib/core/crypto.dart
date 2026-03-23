@@ -65,7 +65,7 @@ Future<SessionKeys> deriveSessionKeys({
   final derivedKey = await hkdf.deriveKey(
     secretKey: SecretKey(sharedBytes),
     nonce: sessionId.codeUnits, // salt
-    info: 'terminal-relay/v1/channel-keys'.codeUnits,
+    info: 'farwatch/v1/channel-keys'.codeUnits,
   );
   final okm = await derivedKey.extractBytes();
 

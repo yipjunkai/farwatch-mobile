@@ -4,7 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/pairing.dart';
 
 /// Dedicated QR scanner screen. Returns a [PairingUri] via Navigator.pop
-/// when a valid termrelay:// QR code is scanned.
+/// when a valid farwatch:// QR code is scanned.
 ///
 /// Camera only starts when this screen is opened (not on app launch).
 class ScanScreen extends StatefulWidget {
@@ -31,7 +31,7 @@ class _ScanScreenState extends State<ScanScreen> {
       final raw = barcode.rawValue;
       if (raw == null) continue;
 
-      if (raw.startsWith('termrelay://')) {
+      if (raw.startsWith('farwatch://')) {
         _processed = true;
         _returnPairing(raw);
         return;
@@ -69,7 +69,7 @@ class _ScanScreenState extends State<ScanScreen> {
               errorBuilder: (context, error, child) {
                 final message = switch (error.errorCode) {
                   MobileScannerErrorCode.permissionDenied =>
-                    'Camera permission denied.\n\nGo to Settings > Apps > Terminal Relay > Permissions and enable Camera.',
+                    'Camera permission denied.\n\nGo to Settings > Apps > Farwatch > Permissions and enable Camera.',
                   MobileScannerErrorCode.unsupported =>
                     'Camera not available on this device.',
                   _ =>
@@ -100,7 +100,7 @@ class _ScanScreenState extends State<ScanScreen> {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Point your camera at the QR code shown by\nterminal-relay start',
+              'Point your camera at the QR code shown by\nfarwatch start',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[400], fontSize: 14),
             ),

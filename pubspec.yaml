@@ -24,7 +24,7 @@ dependencies:
   web_socket_channel: ^3.0.2
 
   # QR code scanning
-  mobile_scanner: ^6.0.0
+  mobile_scanner: ^7.0.0
 
   # Speech-to-text (on-device recognition)
   speech_to_text: ^7.0.0

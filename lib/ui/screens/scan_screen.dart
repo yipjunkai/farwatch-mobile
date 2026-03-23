@@ -66,7 +66,7 @@ class _ScanScreenState extends State<ScanScreen> {
             child: MobileScanner(
               controller: _controller,
               onDetect: _onDetect,
-              errorBuilder: (context, error, child) {
+              errorBuilder: (context, error) {
                 final message = switch (error.errorCode) {
                   MobileScannerErrorCode.permissionDenied =>
                     'Camera permission denied.\n\nGo to Settings > Apps > Farwatch > Permissions and enable Camera.',

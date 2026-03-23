@@ -1,0 +1,7 @@
+git_url(ENV["MATCH_GIT_URL"] || "")
+storage_mode("git")
+git_branch("main")
+type("appstore")
+app_identifier(["dev.farwatch.app"])
+team_id("P2T5PQM7H2")
+readonly(ENV["CI"] == "true")

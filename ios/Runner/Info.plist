@@ -58,6 +58,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Farwatch needs camera access to scan QR codes for pairing.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Farwatch uses speech recognition to convert your voice into terminal commands.</string>
 	<key>NSMicrophoneUsageDescription</key>

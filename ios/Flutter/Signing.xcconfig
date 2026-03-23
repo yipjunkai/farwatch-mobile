@@ -1,0 +1,11 @@
+// Signing configuration for Farwatch iOS app
+// This file is the single source of truth for code signing settings.
+// For CI (Fastlane Match), CODE_SIGN_STYLE should be "Manual" and
+// PROVISIONING_PROFILE_SPECIFIER should be set. Locally, "Automatic" works.
+
+DEVELOPMENT_TEAM = P2T5PQM7H2
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
+CODE_SIGN_IDENTITY[config=Release] = Apple Distribution
+CODE_SIGN_IDENTITY[config=Profile] = Apple Distribution
+PRODUCT_BUNDLE_IDENTIFIER = dev.farwatch.app

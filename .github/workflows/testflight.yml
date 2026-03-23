@@ -1,0 +1,111 @@
+name: Deploy to TestFlight
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: 'Override build number (optional, defaults to GitHub run number)'
+        required: false
+        type: string
+
+env:
+  FLUTTER_VERSION: '3.41.5'
+
+jobs:
+  build-and-deploy:
+    name: Build & Upload to TestFlight
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Set up Ruby (for Fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Determine build number
+        id: build_number
+        run: |
+          if [ -n "${{ github.event.inputs.build_number }}" ]; then
+            echo "BUILD_NUMBER=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine version from tag
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            # Strip 'v' prefix from tag: v0.1.0 -> 0.1.0
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          else
+            # Use version from pubspec.yaml
+            VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install CocoaPods dependencies
+        run: pod install --repo-update
+        working-directory: ios
+
+      - name: Set up Fastlane Match SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MATCH_DEPLOY_KEY }}
+
+      - name: Sync code signing with Match
+        run: bundle exec fastlane sync_certs
+        working-directory: ios
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+      - name: Build Flutter IPA
+        run: |
+          flutter build ipa \
+            --release \
+            --build-name=${{ steps.version.outputs.VERSION }} \
+            --build-number=${{ steps.build_number.outputs.BUILD_NUMBER }} \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload to TestFlight
+        run: bundle exec fastlane beta
+        working-directory: ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: farwatch-${{ steps.version.outputs.VERSION }}-${{ steps.build_number.outputs.BUILD_NUMBER }}.ipa
+          path: build/ios/ipa/*.ipa
+          retention-days: 30

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Terminal Relay App</string>
+	<string>Farwatch</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>terminal_relay_app</string>
+	<string>farwatch_app</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -51,17 +51,17 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>dev.terminalrelay.pair</string>
+			<string>dev.farwatch.pair</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>termrelay</string>
+				<string>farwatch</string>
 			</array>
 		</dict>
 	</array>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Terminal Relay uses speech recognition to convert your voice into terminal commands.</string>
+	<string>Farwatch uses speech recognition to convert your voice into terminal commands.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Terminal Relay needs microphone access for voice-to-text input.</string>
+	<string>Farwatch needs microphone access for voice-to-text input.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -1,4 +1,4 @@
-// Pairing URI: termrelay://pair?relay=...&session=...&code=...&fingerprint=...&key=...
+// Pairing URI: farwatch://pair?relay=...&session=...&code=...&fingerprint=...&key=...
 
 class PairingUri {
   final String relayUrl;
@@ -15,7 +15,7 @@ class PairingUri {
     this.apiKey,
   });
 
-  /// Build a termrelay:// URI string.
+  /// Build a farwatch:// URI string.
   String build() {
     final params = {
       'relay': relayUrl,
@@ -27,13 +27,13 @@ class PairingUri {
     final query = params.entries
         .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value as String)}')
         .join('&');
-    return 'termrelay://pair?$query';
+    return 'farwatch://pair?$query';
   }
 
-  /// Parse a termrelay://pair?... URI string.
+  /// Parse a farwatch://pair?... URI string.
   static PairingUri parse(String input) {
     final uri = Uri.parse(input);
-    if (uri.scheme != 'termrelay' || uri.host != 'pair') {
+    if (uri.scheme != 'farwatch' || uri.host != 'pair') {
       throw FormatException('Invalid pairing URI scheme/host: $input');
     }
 

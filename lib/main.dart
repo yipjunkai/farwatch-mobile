@@ -18,18 +18,18 @@ void main() {
     ),
   );
 
-  runApp(const TerminalRelayApp());
+  runApp(const FarwatchApp());
 }
 
-class TerminalRelayApp extends StatefulWidget {
-  const TerminalRelayApp({super.key});
+class FarwatchApp extends StatefulWidget {
+  const FarwatchApp({super.key});
 
   @override
-  State<TerminalRelayApp> createState() => _TerminalRelayAppState();
+  State<FarwatchApp> createState() => _FarwatchAppState();
 }
 
-class _TerminalRelayAppState extends State<TerminalRelayApp> {
-  static const _channel = MethodChannel('dev.terminalrelay/deeplink');
+class _FarwatchAppState extends State<FarwatchApp> {
+  static const _channel = MethodChannel('dev.farwatch/deeplink');
 
   final _navigatorKey = GlobalKey<NavigatorState>();
 
@@ -44,7 +44,7 @@ class _TerminalRelayAppState extends State<TerminalRelayApp> {
   Future<void> _checkInitialLink() async {
     try {
       final link = await _channel.invokeMethod<String>('getInitialLink');
-      if (link != null && link.startsWith('termrelay://')) {
+      if (link != null && link.startsWith('farwatch://')) {
         _navigateToTerminal(PairingUri.parse(link));
       }
     } on MissingPluginException {
@@ -59,7 +59,7 @@ class _TerminalRelayAppState extends State<TerminalRelayApp> {
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'onNewLink') {
         final link = call.arguments as String?;
-        if (link != null && link.startsWith('termrelay://')) {
+        if (link != null && link.startsWith('farwatch://')) {
           _navigateToTerminal(PairingUri.parse(link));
         }
       }
@@ -75,7 +75,7 @@ class _TerminalRelayAppState extends State<TerminalRelayApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Terminal Relay',
+      title: 'Farwatch',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
       theme: ThemeData(

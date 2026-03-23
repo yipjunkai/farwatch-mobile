@@ -1,5 +1,5 @@
-name: terminal_relay_app
-description: "Terminal Relay mobile client"
+name: farwatch_app
+description: "Farwatch mobile client"
 publish_to: 'none'
 version: 0.1.0+1
 

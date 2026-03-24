@@ -9,6 +9,11 @@
 	<key>uploadSymbols</key>
 	<true/>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>dev.farwatch.app</key>
+		<string>match AppStore dev.farwatch.app</string>
+	</dict>
 </dict>
 </plist>

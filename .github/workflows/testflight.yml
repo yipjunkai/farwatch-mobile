@@ -100,18 +100,22 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
 
-      - name: Build Flutter IPA
+      - name: Build Flutter app (no codesign)
         run: |
-          flutter build ipa \
+          flutter build ios \
             --release \
+            --no-codesign \
             --build-name=${{ steps.version.outputs.VERSION }} \
-            --build-number=${{ steps.build_number.outputs.BUILD_NUMBER }} \
-            --export-options-plist=ios/ExportOptions.plist
+            --build-number=${{ steps.build_number.outputs.BUILD_NUMBER }}
 
-      - name: Upload to TestFlight
-        run: bundle exec fastlane beta
+      - name: Build IPA and upload to TestFlight
+        run: bundle exec fastlane ci_beta
         working-directory: ios
         env:
+          MATCH_KEYCHAIN_NAME: build.keychain
+          MATCH_KEYCHAIN_PASSWORD: ${{ github.run_id }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}

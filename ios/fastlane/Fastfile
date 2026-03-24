@@ -27,10 +27,8 @@ platform :ios do
     match(type: "appstore", api_key: asc_api_key)
   end
 
-  desc "Build and upload to TestFlight"
+  desc "Upload pre-built IPA to TestFlight (certs already synced via sync_certs lane)"
   lane :beta do
-    match(type: "appstore", api_key: asc_api_key)
-
     upload_to_testflight(
       api_key: asc_api_key,
       ipa: IPA_PATH,

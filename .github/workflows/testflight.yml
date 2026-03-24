@@ -11,6 +11,13 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-deploy
+  cancel-in-progress: false
+
 env:
   FLUTTER_VERSION: '3.41.5'
 
@@ -26,6 +33,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          missing=""
+          [ -z "$MATCH_DEPLOY_KEY" ] && missing="$missing MATCH_DEPLOY_KEY"
+          [ -z "$MATCH_GIT_URL" ] && missing="$missing MATCH_GIT_URL"
+          [ -z "$MATCH_PASSWORD" ] && missing="$missing MATCH_PASSWORD"
+          [ -z "$ASC_KEY_ID" ] && missing="$missing ASC_KEY_ID"
+          [ -z "$ASC_ISSUER_ID" ] && missing="$missing ASC_ISSUER_ID"
+          [ -z "$ASC_KEY_CONTENT" ] && missing="$missing ASC_KEY_CONTENT"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets:$missing"
+            exit 1
+          fi
+        env:
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

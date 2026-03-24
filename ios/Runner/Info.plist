@@ -64,6 +64,8 @@
 	<string>Farwatch uses speech recognition to convert your voice into terminal commands.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Farwatch needs microphone access for voice-to-text input.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

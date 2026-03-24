@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../core/crypto.dart';
 import '../core/log.dart';
@@ -167,11 +168,14 @@ class RelaySession extends ChangeNotifier {
       // Listen for relay client state changes (reconnecting, failed, etc)
       _client!.addListener(_onRelayStateChanged);
 
+      // Get app version at runtime
+      final packageInfo = await PackageInfo.fromPlatform();
+
       // Connect and register
       await _client!.connect(RegisterRequest(
         protocolVersion: protocolVersion,
         protocolVersionMin: protocolVersionMin,
-        clientVersion: '0.1.0',
+        clientVersion: packageInfo.version,
         sessionId: pairing.sessionId,
         pairingCode: pairing.pairingCode,
         role: PeerRole.client,

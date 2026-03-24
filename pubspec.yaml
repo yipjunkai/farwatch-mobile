@@ -35,6 +35,9 @@ dependencies:
   # Local storage
   shared_preferences: ^2.3.0
 
+  # App version info
+  package_info_plus: ^8.0.0
+
   # Time formatting
   timeago: ^3.7.0
 

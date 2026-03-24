@@ -22,8 +22,43 @@ env:
   FLUTTER_VERSION: '3.41.5'
 
 jobs:
+  checks:
+    name: ${{ matrix.check }}
+    runs-on: macos-15
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [test, analyze, format]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        if: matrix.check == 'test'
+        run: flutter test
+
+      - name: Run analysis
+        if: matrix.check == 'analyze'
+        run: flutter analyze
+
+      - name: Check formatting
+        if: matrix.check == 'format'
+        run: dart format --set-exit-if-changed .
+
   build-and-deploy:
     name: Build & Upload to TestFlight
+    needs: checks
     runs-on: macos-15
     timeout-minutes: 45
     defaults:
@@ -85,9 +120,6 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      - name: Run Flutter tests
-        run: flutter test
-
       - name: Determine build number
         id: build_number
         run: |
@@ -102,9 +134,17 @@ jobs:
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             # Strip 'v' prefix from tag: v0.1.0 -> 0.1.0
-            VERSION="${{ github.ref_name }}"
-            VERSION="${VERSION#v}"
-            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            TAG_VERSION="${{ github.ref_name }}"
+            TAG_VERSION="${TAG_VERSION#v}"
+
+            # Validate tag version matches pubspec.yaml
+            PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+            if [[ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]]; then
+              echo "::error::Tag version ($TAG_VERSION) does not match pubspec.yaml version ($PUBSPEC_VERSION)"
+              exit 1
+            fi
+
+            echo "VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
           else
             # Use version from pubspec.yaml
             VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
@@ -145,6 +185,8 @@ jobs:
         run: |
           flutter build ipa \
             --release \
+            --obfuscate \
+            --split-debug-info=build/symbols \
             --build-name=${{ steps.version.outputs.VERSION }} \
             --build-number=${{ steps.build_number.outputs.BUILD_NUMBER }} \
             --export-options-plist=ios/ExportOptions.plist
@@ -168,6 +210,14 @@ jobs:
           name: farwatch-${{ steps.version.outputs.VERSION }}-${{ steps.build_number.outputs.BUILD_NUMBER }}.ipa
           path: build/ios/ipa/*.ipa
           retention-days: 30
+
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: farwatch-${{ steps.version.outputs.VERSION }}-${{ steps.build_number.outputs.BUILD_NUMBER }}-symbols
+          path: build/symbols/
+          retention-days: 90
 
       - name: Clean up keychain
         if: always()

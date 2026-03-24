@@ -47,7 +47,7 @@ platform :ios do
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
       configuration: "Release",
-      export_method: "app-store",
+      export_method: "app-store-connect",
       export_options: {
         signingStyle: "manual",
         provisioningProfiles: {

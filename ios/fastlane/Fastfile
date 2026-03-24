@@ -56,6 +56,7 @@ platform :ios do
           APP_IDENTIFIER => profile_name
         }
       },
+
       output_directory: "../build/ios/ipa",
       output_name: "Farwatch.ipa"
     )

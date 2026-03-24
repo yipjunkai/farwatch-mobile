@@ -168,3 +168,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,visualstudiocode,dotenv,flutter
+
+# Fastlane generated files
+ios/fastlane/report.xml
+ios/fastlane/README.md

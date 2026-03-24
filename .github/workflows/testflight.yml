@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      build_number:
-        description: 'Override build number (optional, defaults to GitHub run number)'
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -113,7 +107,7 @@ jobs:
           path: |
             ~/.pub-cache
             ios/Pods
-          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock', 'ios/Podfile.lock') }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('pubspec.lock', 'ios/Podfile.lock', 'ios/Podfile') }}
           restore-keys: |
             ${{ runner.os }}-deps-
 
@@ -123,14 +117,8 @@ jobs:
       - name: Determine build number
         id: build_number
         env:
-          INPUT_BUILD_NUMBER: ${{ github.event.inputs.build_number }}
           RUN_NUMBER: ${{ github.run_number }}
-        run: |
-          if [ -n "$INPUT_BUILD_NUMBER" ]; then
-            echo "BUILD_NUMBER=$INPUT_BUILD_NUMBER" >> $GITHUB_OUTPUT
-          else
-            echo "BUILD_NUMBER=$RUN_NUMBER" >> $GITHUB_OUTPUT
-          fi
+        run: echo "BUILD_NUMBER=$RUN_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Determine version from tag
         id: version

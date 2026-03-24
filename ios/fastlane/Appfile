@@ -1,11 +1,9 @@
 app_identifier("dev.farwatch.app")
-apple_id(ENV["APPLE_ID"] || "")
 team_id("P2T5PQM7H2")
-itc_team_id(ENV["ITC_TEAM_ID"] || "")
 
 # Note: team_id and app_identifier are hardcoded because they are
 # permanent identifiers (like a domain name). They are not secrets.
 # These same values must also appear in:
-#   - ios/Flutter/Signing.xcconfig
+#   - ios/Flutter/Signing.xcconfig (Release builds)
 #   - ios/ExportOptions.plist
 #   - ios/Runner.xcodeproj/project.pbxproj (via xcconfig inheritance)

@@ -24,7 +24,7 @@ env:
 jobs:
   checks:
     name: ${{ matrix.check }}
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -143,7 +143,7 @@ jobs:
             TAG_VERSION="${REF_NAME#v}"
 
             # Validate tag version matches pubspec.yaml
-            PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+            PUBSPEC_VERSION=$(awk '/^version:/{gsub(/version:[[:space:]]*/, ""); gsub(/\+.*/, ""); print}' pubspec.yaml)
             if [[ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]]; then
               echo "::error::Tag version ($TAG_VERSION) does not match pubspec.yaml version ($PUBSPEC_VERSION)"
               exit 1
@@ -152,9 +152,24 @@ jobs:
             echo "VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
           else
             # Use version from pubspec.yaml
-            VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+            VERSION=$(awk '/^version:/{gsub(/version:[[:space:]]*/, ""); gsub(/\+.*/, ""); print}' pubspec.yaml)
             echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           fi
+
+      - name: Validate version and build number
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.VERSION }}
+          BUILD_NUMBER: ${{ steps.build_number.outputs.BUILD_NUMBER }}
+        run: |
+          if [ -z "$BUILD_VERSION" ]; then
+            echo "::error::VERSION output is empty"
+            exit 1
+          fi
+          if [ -z "$BUILD_NUMBER" ]; then
+            echo "::error::BUILD_NUMBER output is empty"
+            exit 1
+          fi
+          echo "Building version $BUILD_VERSION+$BUILD_NUMBER"
 
       - name: Install CocoaPods dependencies
         run: pod install

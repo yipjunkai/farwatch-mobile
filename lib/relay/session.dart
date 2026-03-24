@@ -76,6 +76,9 @@ class RelaySession extends ChangeNotifier {
   Timer? _handshakeTimer;
   static const _handshakeTimeout = Duration(seconds: 15);
 
+  // Cached app version (avoids repeated platform channel calls)
+  static String? _cachedClientVersion;
+
   // Output streams
   final _outputController = StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get output => _outputController.stream;
@@ -168,14 +171,14 @@ class RelaySession extends ChangeNotifier {
       // Listen for relay client state changes (reconnecting, failed, etc)
       _client!.addListener(_onRelayStateChanged);
 
-      // Get app version at runtime
-      final packageInfo = await PackageInfo.fromPlatform();
+      // Get app version at runtime (cached after first call)
+      _cachedClientVersion ??= (await PackageInfo.fromPlatform()).version;
 
       // Connect and register
       await _client!.connect(RegisterRequest(
         protocolVersion: protocolVersion,
         protocolVersionMin: protocolVersionMin,
-        clientVersion: packageInfo.version,
+        clientVersion: _cachedClientVersion!,
         sessionId: pairing.sessionId,
         pairingCode: pairing.pairingCode,
         role: PeerRole.client,

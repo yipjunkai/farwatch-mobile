@@ -122,20 +122,25 @@ jobs:
 
       - name: Determine build number
         id: build_number
+        env:
+          INPUT_BUILD_NUMBER: ${{ github.event.inputs.build_number }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          if [ -n "${{ github.event.inputs.build_number }}" ]; then
-            echo "BUILD_NUMBER=${{ github.event.inputs.build_number }}" >> $GITHUB_OUTPUT
+          if [ -n "$INPUT_BUILD_NUMBER" ]; then
+            echo "BUILD_NUMBER=$INPUT_BUILD_NUMBER" >> $GITHUB_OUTPUT
           else
-            echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "BUILD_NUMBER=$RUN_NUMBER" >> $GITHUB_OUTPUT
           fi
 
       - name: Determine version from tag
         id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+          if [[ "$REF_TYPE" == "tag" ]]; then
             # Strip 'v' prefix from tag: v0.1.0 -> 0.1.0
-            TAG_VERSION="${{ github.ref_name }}"
-            TAG_VERSION="${TAG_VERSION#v}"
+            TAG_VERSION="${REF_NAME#v}"
 
             # Validate tag version matches pubspec.yaml
             PUBSPEC_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
@@ -182,13 +187,16 @@ jobs:
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
 
       - name: Build Flutter IPA
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.VERSION }}
+          BUILD_NUMBER: ${{ steps.build_number.outputs.BUILD_NUMBER }}
         run: |
           flutter build ipa \
             --release \
             --obfuscate \
             --split-debug-info=build/symbols \
-            --build-name=${{ steps.version.outputs.VERSION }} \
-            --build-number=${{ steps.build_number.outputs.BUILD_NUMBER }} \
+            --build-name="$BUILD_VERSION" \
+            --build-number="$BUILD_NUMBER" \
             --export-options-plist=ios/ExportOptions.plist
 
       - name: Upload to TestFlight

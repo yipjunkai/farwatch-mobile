@@ -410,6 +410,64 @@ class AgentSessionResult extends AgentEvent {
   });
 }
 
+// ── Permission events (for tools requiring user approval) ──
+
+class AgentPermissionRequest extends AgentEvent {
+  final String id;
+  final String tool;
+  final String title;
+  final String metadata;
+  AgentPermissionRequest({
+    required this.id,
+    required this.tool,
+    required this.title,
+    required this.metadata,
+  });
+}
+
+class AgentPermissionResolved extends AgentEvent {
+  final String id;
+  final String response;
+  AgentPermissionResolved({required this.id, required this.response});
+}
+
+// ── Session metadata events ──
+
+class TodoItem {
+  final String id;
+  final String content;
+  final String status;
+  final String priority;
+  TodoItem({
+    required this.id,
+    required this.content,
+    required this.status,
+    required this.priority,
+  });
+}
+
+class AgentTodoUpdate extends AgentEvent {
+  final List<TodoItem> todos;
+  AgentTodoUpdate({required this.todos});
+}
+
+class AgentCostUpdate extends AgentEvent {
+  final int inputTokens;
+  final int outputTokens;
+  final int reasoningTokens;
+  final int cacheReadTokens;
+  final int cacheWriteTokens;
+  final double costUsd;
+  AgentCostUpdate({
+    required this.inputTokens,
+    required this.outputTokens,
+    required this.reasoningTokens,
+    required this.cacheReadTokens,
+    required this.cacheWriteTokens,
+    required this.costUsd,
+  });
+}
+
 /// Command from a rich client to control the agent session.
 sealed class AgentCommand extends SecureMessage {}
 
@@ -428,6 +486,8 @@ class AgentDenyToolUse extends AgentCommand {
   final String? reason;
   AgentDenyToolUse({required this.id, this.reason});
 }
+
+class AgentAbortSession extends AgentCommand {}
 
 class UnknownMessage extends SecureMessage {
   final Uint8List raw;
@@ -543,6 +603,21 @@ Map<String, dynamic> _encodeAgentEvent(AgentEvent evt) {
     AgentTurnCompleted(status: final s) => {'TurnCompleted': {'status': s}},
     AgentSessionResult(result: final r, isError: final e, durationMs: final d, numTurns: final n) =>
       {'SessionResult': {'result': r, 'is_error': e, 'duration_ms': d, 'num_turns': n}},
+    AgentPermissionRequest(id: final i, tool: final t, title: final ti, metadata: final m) =>
+      {'PermissionRequest': {'id': i, 'tool': t, 'title': ti, 'metadata': m}},
+    AgentPermissionResolved(id: final i, response: final r) =>
+      {'PermissionResolved': {'id': i, 'response': r}},
+    AgentTodoUpdate(todos: final t) =>
+      {'TodoUpdate': {'todos': t.map((item) => {
+        'id': item.id, 'content': item.content, 'status': item.status, 'priority': item.priority,
+      }).toList()}},
+    AgentCostUpdate(
+      inputTokens: final inp, outputTokens: final out, reasoningTokens: final rea,
+      cacheReadTokens: final cr, cacheWriteTokens: final cw, costUsd: final c,
+    ) => {'CostUpdate': {
+      'input_tokens': inp, 'output_tokens': out, 'reasoning_tokens': rea,
+      'cache_read_tokens': cr, 'cache_write_tokens': cw, 'cost_usd': c,
+    }},
   };
 }
 
@@ -552,6 +627,7 @@ Map<String, dynamic> _encodeAgentCommand(AgentCommand cmd) {
     AgentApproveToolUse(id: final i) => {'ApproveToolUse': {'id': i}},
     AgentDenyToolUse(id: final i, reason: final r) =>
       {'DenyToolUse': {'id': i, 'reason': r}},
+    AgentAbortSession() => {'AbortSession': null},
   };
 }
 
@@ -643,11 +719,45 @@ AgentEvent _decodeAgentEvent(dynamic raw) {
       durationMs: value['duration_ms'] as int,
       numTurns: value['num_turns'] as int,
     ),
+    'PermissionRequest' => AgentPermissionRequest(
+      id: (value as Map)['id'] as String,
+      tool: value['tool'] as String,
+      title: value['title'] as String,
+      metadata: value['metadata'] as String,
+    ),
+    'PermissionResolved' => AgentPermissionResolved(
+      id: (value as Map)['id'] as String,
+      response: value['response'] as String,
+    ),
+    'TodoUpdate' => AgentTodoUpdate(
+      todos: ((value as Map)['todos'] as List).map((t) => TodoItem(
+        id: (t as Map)['id'] as String? ?? '',
+        content: t['content'] as String? ?? '',
+        status: t['status'] as String? ?? 'pending',
+        priority: t['priority'] as String? ?? 'medium',
+      )).toList(),
+    ),
+    'CostUpdate' => AgentCostUpdate(
+      inputTokens: (value as Map)['input_tokens'] as int,
+      outputTokens: value['output_tokens'] as int,
+      reasoningTokens: value['reasoning_tokens'] as int,
+      cacheReadTokens: value['cache_read_tokens'] as int,
+      cacheWriteTokens: value['cache_write_tokens'] as int,
+      costUsd: (value['cost_usd'] as num).toDouble(),
+    ),
     _ => AgentTurnStarted(), // forward compat
   };
 }
 
 AgentCommand _decodeAgentCommand(dynamic raw) {
+  // Unit variants (e.g. AbortSession) are serialized as bare strings.
+  if (raw is String) {
+    return switch (raw) {
+      'AbortSession' => AgentAbortSession(),
+      _ => AgentPrompt(text: ''),
+    };
+  }
+
   if (raw is! Map) return AgentPrompt(text: '');
 
   final entry = raw.entries.first;
@@ -661,6 +771,7 @@ AgentCommand _decodeAgentCommand(dynamic raw) {
       id: (value as Map)['id'] as String,
       reason: value['reason'] as String?,
     ),
+    'AbortSession' => AgentAbortSession(),
     _ => AgentPrompt(text: ''),
   };
 }

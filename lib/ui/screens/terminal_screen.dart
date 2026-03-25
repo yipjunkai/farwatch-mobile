@@ -36,6 +36,17 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   final List<_AgentMessage> _agentMessages = [];
   final ScrollController _agentScrollController = ScrollController();
 
+  // Permission tracking: permission ID → resolved status (null = pending)
+  final Map<String, String?> _pendingPermissions = {};
+
+  // Todo list state
+  List<TodoItem> _todos = [];
+
+  // Cost tracking (cumulative)
+  double _sessionCostUsd = 0.0;
+  int _totalInputTokens = 0;
+  int _totalOutputTokens = 0;
+
   // Speech-to-text
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _speechAvailable = false;
@@ -169,6 +180,47 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
             ));
           });
           _scrollAgentToBottom();
+
+        // ── Permission events ──
+        case AgentPermissionRequest(id: final id, tool: final tool, title: final title, metadata: final metadata):
+          setState(() {
+            _hasStructuredEvents = true;
+            _showStructuredView = true;
+            _pendingPermissions[id] = null; // null = pending
+            _agentMessages.add(_AgentMessage(
+              type: _MsgType.permissionRequest,
+              text: title,
+              toolId: id,
+              toolInput: metadata,
+              toolName: tool,
+            ));
+          });
+          _scrollAgentToBottom();
+
+        case AgentPermissionResolved(id: final id, response: final response):
+          setState(() {
+            _pendingPermissions[id] = response;
+          });
+
+        // ── Todo list ──
+        case AgentTodoUpdate(todos: final todos):
+          setState(() {
+            _hasStructuredEvents = true;
+            _showStructuredView = true;
+            _todos = todos;
+          });
+
+        // ── Cost tracking ──
+        case AgentCostUpdate(
+          inputTokens: final inp,
+          outputTokens: final out,
+          costUsd: final cost,
+        ):
+          setState(() {
+            _totalInputTokens += inp;
+            _totalOutputTokens += out;
+            _sessionCostUsd += cost;
+          });
 
         default:
           break;
@@ -736,9 +788,139 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     });
   }
 
+  Widget _buildCostTicker() {
+    if (_sessionCostUsd == 0.0 && _totalInputTokens == 0) return const SizedBox.shrink();
+
+    String formatTokens(int tokens) {
+      if (tokens >= 1000000) return '${(tokens / 1000000).toStringAsFixed(1)}M';
+      if (tokens >= 1000) return '${(tokens / 1000).toStringAsFixed(1)}K';
+      return tokens.toString();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.08),
+        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.15))),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.toll, color: Colors.grey[600], size: 14),
+          const SizedBox(width: 6),
+          Text(
+            '\$${_sessionCostUsd.toStringAsFixed(4)}',
+            style: TextStyle(color: Colors.grey[400], fontSize: 12, fontFamily: 'monospace'),
+          ),
+          const SizedBox(width: 12),
+          Icon(Icons.arrow_downward, color: Colors.grey[600], size: 12),
+          const SizedBox(width: 3),
+          Text(
+            formatTokens(_totalInputTokens),
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.arrow_upward, color: Colors.grey[600], size: 12),
+          const SizedBox(width: 3),
+          Text(
+            formatTokens(_totalOutputTokens),
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodoList() {
+    if (_todos.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(left: 12, right: 12, top: 8),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.checklist, color: Colors.blueGrey[300], size: 14),
+              const SizedBox(width: 6),
+              Text(
+                'Tasks',
+                style: TextStyle(color: Colors.blueGrey[200], fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Text(
+                '${_todos.where((t) => t.status == "completed").length}/${_todos.length}',
+                style: TextStyle(color: Colors.grey[500], fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ..._todos.map((todo) {
+            final isCompleted = todo.status == 'completed';
+            final isCancelled = todo.status == 'cancelled';
+            final isInProgress = todo.status == 'in_progress';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    isCompleted
+                        ? Icons.check_circle
+                        : isCancelled
+                            ? Icons.cancel
+                            : isInProgress
+                                ? Icons.play_circle_filled
+                                : Icons.radio_button_unchecked,
+                    color: isCompleted
+                        ? Colors.green[400]
+                        : isCancelled
+                            ? Colors.grey[600]
+                            : isInProgress
+                                ? Colors.blue[400]
+                                : Colors.grey[600],
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  if (todo.priority == 'high')
+                    Container(
+                      width: 6,
+                      height: 6,
+                      margin: const EdgeInsets.only(top: 4, right: 4),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      todo.content,
+                      style: TextStyle(
+                        color: isCompleted || isCancelled ? Colors.grey[600] : Colors.grey[300],
+                        fontSize: 12,
+                        decoration: isCancelled ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStructuredView() {
     return Column(
       children: [
+        _buildCostTicker(),
+        _buildTodoList(),
         Expanded(
           child: _agentMessages.isEmpty
               ? Center(
@@ -938,7 +1120,134 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
           ],
         ),
       ),
+      _MsgType.permissionRequest => _buildPermissionCard(msg),
     };
+  }
+
+  Widget _buildPermissionCard(_AgentMessage msg) {
+    final permId = msg.toolId ?? '';
+    final resolved = _pendingPermissions[permId];
+    final isPending = resolved == null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isPending
+              ? Colors.amber.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isPending
+                ? Colors.amber.withValues(alpha: 0.4)
+                : Colors.grey.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isPending ? Icons.security : Icons.check_circle_outline,
+                  color: isPending ? Colors.amber[300] : Colors.grey[500],
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  msg.toolName ?? 'Tool',
+                  style: TextStyle(
+                    color: isPending ? Colors.amber[200] : Colors.grey[500],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                if (!isPending) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: resolved == 'allow'
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : Colors.red.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      resolved == 'allow' ? 'Allowed' : 'Denied',
+                      style: TextStyle(
+                        color: resolved == 'allow' ? Colors.green[300] : Colors.red[300],
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              msg.text,
+              style: TextStyle(
+                color: isPending ? Colors.white : Colors.grey[500],
+                fontSize: 13,
+              ),
+            ),
+            if (msg.toolInput != null && msg.toolInput!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                msg.toolInput!.length > 150 ? '${msg.toolInput!.substring(0, 150)}...' : msg.toolInput!,
+                style: TextStyle(color: Colors.grey[600], fontSize: 11, fontFamily: 'monospace'),
+              ),
+            ],
+            if (isPending) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 36,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          _session.sendDenyToolUse(permId);
+                          setState(() => _pendingPermissions[permId] = 'deny');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red[300],
+                          side: BorderSide(color: Colors.red.withValues(alpha: 0.4)),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text('Deny', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: 36,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          _session.sendApproveToolUse(permId);
+                          setState(() => _pendingPermissions[permId] = 'allow');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.withValues(alpha: 0.3),
+                          foregroundColor: Colors.green[200],
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text('Allow', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   void _sendPrompt() {
@@ -1055,19 +1364,22 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
 // Structured agent message model
 // ---------------------------------------------------------------------------
 
-enum _MsgType { system, text, thinking, toolCall, toolResult, toolError, turnMarker }
+enum _MsgType { system, text, thinking, toolCall, toolResult, toolError, turnMarker, permissionRequest }
 
 class _AgentMessage {
   _MsgType type;
   String text;
   String? toolId;
   String? toolInput;
+  /// Tool name (used for permission request cards).
+  String? toolName;
 
   _AgentMessage({
     required this.type,
     required this.text,
     this.toolId,
     this.toolInput,
+    this.toolName,
   });
 }
 

@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/log.dart';
 import 'core/pairing.dart';
+import 'theme/farwatch_colors.dart';
+import 'theme/theme_config.dart';
 import 'ui/adaptive.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/terminal_screen.dart';
@@ -20,7 +23,7 @@ void main() {
     ),
   );
 
-  runApp(const FarwatchApp());
+  runApp(const ProviderScope(child: FarwatchApp()));
 }
 
 class FarwatchApp extends StatefulWidget {
@@ -76,21 +79,21 @@ class _FarwatchAppState extends State<FarwatchApp> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = FarwatchColors.dark();
+
     if (isApplePlatform) {
-      return CupertinoApp(
-        title: 'Farwatch',
-        debugShowCheckedModeBanner: false,
-        navigatorKey: _navigatorKey,
-        theme: const CupertinoThemeData(
-          brightness: Brightness.dark,
-          primaryColor: CupertinoColors.systemTeal,
-          scaffoldBackgroundColor: CupertinoColors.black,
-          barBackgroundColor: Color(0xB01C1C1E),
-          textTheme: CupertinoTextThemeData(
-            primaryColor: CupertinoColors.white,
-          ),
+      // Wrap CupertinoApp in a Theme so widgets can access FarwatchColors
+      // via Theme.of(context).extension<FarwatchColors>() / context.colors.
+      // CupertinoApp does not natively support ThemeExtension.
+      return Theme(
+        data: buildMaterialTheme(colors: colors),
+        child: CupertinoApp(
+          title: 'Farwatch',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: _navigatorKey,
+          theme: buildCupertinoTheme(colors: colors),
+          home: const HomeScreen(),
         ),
-        home: const HomeScreen(),
       );
     }
 
@@ -98,12 +101,7 @@ class _FarwatchAppState extends State<FarwatchApp> {
       title: 'Farwatch',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.teal,
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.black,
-      ),
+      theme: buildMaterialTheme(colors: colors),
       home: const HomeScreen(),
     );
   }

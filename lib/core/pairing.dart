@@ -15,6 +15,18 @@ class PairingUri {
     this.apiKey,
   });
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PairingUri &&
+          runtimeType == other.runtimeType &&
+          sessionId == other.sessionId &&
+          relayUrl == other.relayUrl &&
+          pairingCode == other.pairingCode;
+
+  @override
+  int get hashCode => Object.hash(sessionId, relayUrl, pairingCode);
+
   /// Build a farwatch:// URI string.
   String build() {
     final params = {

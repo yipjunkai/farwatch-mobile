@@ -1,12 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/log.dart';
 import 'core/pairing.dart';
+import 'providers/deep_link_provider.dart';
 import 'theme/farwatch_colors.dart';
 import 'theme/theme_config.dart';
 import 'ui/adaptive.dart';
@@ -26,49 +24,19 @@ void main() {
   runApp(const ProviderScope(child: FarwatchApp()));
 }
 
-class FarwatchApp extends StatefulWidget {
+class FarwatchApp extends ConsumerStatefulWidget {
   const FarwatchApp({super.key});
 
   @override
-  State<FarwatchApp> createState() => _FarwatchAppState();
+  ConsumerState<FarwatchApp> createState() => _FarwatchAppState();
 }
 
-class _FarwatchAppState extends State<FarwatchApp> {
-  static const _channel = MethodChannel('dev.farwatch/deeplink');
-
+class _FarwatchAppState extends ConsumerState<FarwatchApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
-    _checkInitialLink();
-    _listenForLinks();
-  }
-
-  /// Check if the app was launched via a deep link (cold start).
-  Future<void> _checkInitialLink() async {
-    try {
-      final link = await _channel.invokeMethod<String>('getInitialLink');
-      if (link != null && link.startsWith('farwatch://')) {
-        _navigateToTerminal(PairingUri.parse(link));
-      }
-    } on MissingPluginException {
-      // No native handler (e.g. in tests) -- ignore
-    } catch (e) {
-      log('[deeplink] initial link error: $e');
-    }
-  }
-
-  /// Listen for deep links while the app is running (warm start).
-  void _listenForLinks() {
-    _channel.setMethodCallHandler((call) async {
-      if (call.method == 'onNewLink') {
-        final link = call.arguments as String?;
-        if (link != null && link.startsWith('farwatch://')) {
-          _navigateToTerminal(PairingUri.parse(link));
-        }
-      }
-    });
   }
 
   void _navigateToTerminal(PairingUri pairing) {
@@ -79,6 +47,11 @@ class _FarwatchAppState extends State<FarwatchApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for deep links and navigate to terminal.
+    ref.listen(deepLinkProvider, (_, next) {
+      next.whenData((pairing) => _navigateToTerminal(pairing));
+    });
+
     final colors = FarwatchColors.dark();
 
     if (isApplePlatform) {

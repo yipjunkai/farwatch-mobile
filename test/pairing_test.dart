@@ -130,4 +130,50 @@ void main() {
       );
     });
   });
+
+  group('Equality', () {
+    test('same fields are equal', () {
+      final a = PairingUri(
+        relayUrl: 'wss://r',
+        sessionId: 'sess1',
+        pairingCode: 'aaa-bbb-ccc',
+      );
+      final b = PairingUri(
+        relayUrl: 'wss://r',
+        sessionId: 'sess1',
+        pairingCode: 'aaa-bbb-ccc',
+      );
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+    });
+
+    test('different sessionId are not equal', () {
+      final a = PairingUri(
+        relayUrl: 'wss://r',
+        sessionId: 'sess1',
+        pairingCode: 'aaa-bbb-ccc',
+      );
+      final b = PairingUri(
+        relayUrl: 'wss://r',
+        sessionId: 'sess2',
+        pairingCode: 'aaa-bbb-ccc',
+      );
+      expect(a, isNot(equals(b)));
+    });
+
+    test('works as Map key', () {
+      final uri = PairingUri(
+        relayUrl: 'wss://r',
+        sessionId: 'sess1',
+        pairingCode: 'aaa-bbb-ccc',
+      );
+      final map = {uri: 'value'};
+      final lookup = PairingUri(
+        relayUrl: 'wss://r',
+        sessionId: 'sess1',
+        pairingCode: 'aaa-bbb-ccc',
+      );
+      expect(map[lookup], 'value');
+    });
+  });
 }

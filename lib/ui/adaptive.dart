@@ -367,7 +367,13 @@ void showAdaptiveToast(BuildContext context, String message) {
       ),
     );
     overlay.insert(entry);
-    Future.delayed(const Duration(seconds: 3), () => entry.remove());
+    Future.delayed(const Duration(seconds: 3), () {
+      try {
+        entry.remove();
+      } catch (_) {
+        // Entry may already be removed if the overlay was disposed.
+      }
+    });
   } else {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }

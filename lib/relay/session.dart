@@ -136,7 +136,7 @@ class RelaySession extends ChangeNotifier {
     _frameQueue.clear();
     _processingHandshake = false;
 
-    if (_client?.state == ConnectionState.connected) {
+    if (_client?.state == RelayConnectionState.connected) {
       // Still connected to relay, just resend handshake
       _sendHandshake();
       _setState(SessionState.handshaking);
@@ -222,9 +222,9 @@ class RelaySession extends ChangeNotifier {
   void _onRelayStateChanged() {
     if (_disposed) return;
     final clientState = _client?.state;
-    if (clientState == ConnectionState.reconnecting) {
+    if (clientState == RelayConnectionState.reconnecting) {
       _setState(SessionState.reconnecting);
-    } else if (clientState == ConnectionState.failed) {
+    } else if (clientState == RelayConnectionState.failed) {
       _setError(_client?.lastError ?? 'Connection failed');
     }
   }
@@ -468,80 +468,41 @@ class RelaySession extends ChangeNotifier {
   // Outbound (user actions)
   // ---------------------------------------------------------------------------
 
-  Future<void> sendInput(Uint8List data) async {
+  /// Encrypt and send a [SecureMessage] to the peer. No-op if not connected.
+  Future<void> _sendSecure(SecureMessage msg) async {
     if (_state != SessionState.connected || _channel == null) return;
     try {
-      final sealed = await _channel!.seal(PtyInput(data));
+      final sealed = await _channel!.seal(msg);
       _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
     } catch (e) {
       log('[session] seal error: $e');
     }
   }
 
-  Future<void> sendResize(int cols, int rows) async {
-    if (_state != SessionState.connected || _channel == null) return;
-    try {
-      final sealed = await _channel!.seal(Resize(cols: cols, rows: rows));
-      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
-    } catch (e) {
-      log('[session] seal error: $e');
-    }
-  }
+  Future<void> sendInput(Uint8List data) => _sendSecure(PtyInput(data));
+
+  Future<void> sendResize(int cols, int rows) =>
+      _sendSecure(Resize(cols: cols, rows: rows));
 
   Future<void> sendVoiceCommand({
     required String transcript,
     String? intent,
     required double confidence,
-  }) async {
-    if (_state != SessionState.connected || _channel == null) return;
-    try {
-      final msg = VoiceCommand(
+  }) =>
+      _sendSecure(VoiceCommand(
         transcript: transcript,
         intent: intent,
         confidence: confidence,
-      );
-      final sealed = await _channel!.seal(msg);
-      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
-    } catch (e) {
-      log('[session] seal error: $e');
-    }
-  }
+      ));
 
-  /// Send a text prompt to the agent (structured mode).
-  Future<void> sendAgentPrompt(String text) async {
-    if (_state != SessionState.connected || _channel == null) return;
-    try {
-      final msg = AgentPrompt(text: text);
-      final sealed = await _channel!.seal(msg);
-      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
-    } catch (e) {
-      log('[session] seal error: $e');
-    }
-  }
+  Future<void> sendAgentPrompt(String text) =>
+      _sendSecure(AgentPrompt(text: text));
 
-  /// Approve a pending tool invocation (structured mode).
-  Future<void> sendApproveToolUse(String id) async {
-    if (_state != SessionState.connected || _channel == null) return;
-    try {
-      final msg = AgentApproveToolUse(id: id);
-      final sealed = await _channel!.seal(msg);
-      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
-    } catch (e) {
-      log('[session] seal error: $e');
-    }
-  }
+  Future<void> sendApproveToolUse(String id) =>
+      _sendSecure(AgentApproveToolUse(id: id));
 
-  /// Deny a pending tool invocation (structured mode).
-  Future<void> sendDenyToolUse(String id, {String? reason}) async {
-    if (_state != SessionState.connected || _channel == null) return;
-    try {
-      final msg = AgentDenyToolUse(id: id, reason: reason);
-      final sealed = await _channel!.seal(msg);
-      _client?.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));
-    } catch (e) {
-      log('[session] seal error: $e');
-    }
-  }
+  Future<void> sendDenyToolUse(String id, {String? reason}) =>
+      _sendSecure(AgentDenyToolUse(id: id, reason: reason));
 
   // ---------------------------------------------------------------------------
   // App lifecycle
@@ -555,10 +516,10 @@ class RelaySession extends ChangeNotifier {
     if (_disposed || _client == null) return;
 
     final clientState = _client!.state;
-    if (clientState == ConnectionState.connected) {
+    if (clientState == RelayConnectionState.connected) {
       // Connection still alive, just resume heartbeat
       _client!.resumeHeartbeat();
-    } else if (clientState != ConnectionState.connecting) {
+    } else if (clientState != RelayConnectionState.connecting) {
       // Connection died while backgrounded, reconnect immediately
       log('[session] connection lost while backgrounded, reconnecting');
       _client!.reconnectNow();

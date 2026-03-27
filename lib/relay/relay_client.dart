@@ -28,7 +28,7 @@ class ReconnectConfig {
 }
 
 /// Connection state visible to consumers.
-enum ConnectionState {
+enum RelayConnectionState {
   disconnected,
   connecting,
   connected,
@@ -53,8 +53,8 @@ class RelayClient extends ChangeNotifier {
   Timer? _heartbeatTimer;
   RegisterRequest? _lastRequest;
 
-  ConnectionState _state = ConnectionState.disconnected;
-  ConnectionState get state => _state;
+  RelayConnectionState _state = RelayConnectionState.disconnected;
+  RelayConnectionState get state => _state;
 
   RegisterResponse? _registered;
   RegisterResponse? get registered => _registered;
@@ -85,7 +85,7 @@ class RelayClient extends ChangeNotifier {
         _apiKey = apiKey,
         _reconnectConfig = reconnectConfig;
 
-  void _setState(ConnectionState s) {
+  void _setState(RelayConnectionState s) {
     if (_disposed) return;
     log('[relay] state: $s');
     _state = s;
@@ -103,7 +103,7 @@ class RelayClient extends ChangeNotifier {
 
   Future<void> _connectOnce(RegisterRequest request) async {
     if (_disposed || _intentionalClose) return;
-    _setState(ConnectionState.connecting);
+    _setState(RelayConnectionState.connecting);
     _lastError = null;
 
     try {
@@ -183,7 +183,7 @@ class RelayClient extends ChangeNotifier {
           .timeout(const Duration(seconds: 15));
 
       _reconnectAttempt = 0;
-      _setState(ConnectionState.connected);
+      _setState(RelayConnectionState.connected);
 
       // Start heartbeat
       _heartbeatTimer?.cancel();
@@ -216,11 +216,11 @@ class RelayClient extends ChangeNotifier {
 
     if (_reconnectAttempt >= _reconnectConfig.maxAttempts) {
       _lastError ??= 'Failed after ${_reconnectConfig.maxAttempts} attempts';
-      _setState(ConnectionState.failed);
+      _setState(RelayConnectionState.failed);
       return;
     }
 
-    _setState(ConnectionState.reconnecting);
+    _setState(RelayConnectionState.reconnecting);
     final delay = _reconnectConfig.delayForAttempt(_reconnectAttempt);
     _reconnectAttempt++;
     log('[relay] reconnecting in ${delay.inMilliseconds}ms '
@@ -267,7 +267,7 @@ class RelayClient extends ChangeNotifier {
   /// Skips backoff delay. No-op if already connected or disposed.
   void reconnectNow() {
     if (_disposed || _intentionalClose) return;
-    if (_state == ConnectionState.connected) return;
+    if (_state == RelayConnectionState.connected) return;
     if (_lastRequest == null) return;
     log('[relay] reconnectNow requested');
     _reconnectAttempt = 0;
@@ -282,7 +282,7 @@ class RelayClient extends ChangeNotifier {
 
   /// Resume heartbeats (e.g. when app is foregrounded).
   void resumeHeartbeat() {
-    if (_state != ConnectionState.connected) return;
+    if (_state != RelayConnectionState.connected) return;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(
       const Duration(seconds: 10),
@@ -294,7 +294,7 @@ class RelayClient extends ChangeNotifier {
   Future<void> disconnect() async {
     _intentionalClose = true;
     await _teardownChannel();
-    if (!_disposed) _setState(ConnectionState.disconnected);
+    if (!_disposed) _setState(RelayConnectionState.disconnected);
   }
 
   @override

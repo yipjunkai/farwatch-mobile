@@ -13,6 +13,7 @@ import '../../core/log.dart';
 import '../../core/pairing.dart';
 import '../../core/protocol.dart';
 import '../../core/session_history.dart';
+import '../../data/session_history_repository.dart';
 import '../../relay/session.dart';
 import '../adaptive.dart';
 
@@ -30,6 +31,9 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   late final Terminal _terminal;
   StreamSubscription? _outputSub;
   StreamSubscription? _eventSub;
+
+  // Temporary bridge until Phase 3 wires the Riverpod provider.
+  final _historyRepo = SessionHistoryRepository();
 
 
   // Structured agent event state
@@ -87,7 +91,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
       switch (msg) {
         case SessionEnded(exitCode: final code):
           _showToast('Session ended (exit code: $code)');
-          SessionHistory.update(
+          _historyRepo.update(
             widget.pairing.sessionId,
             lastActiveAt: DateTime.now(),
             endReason: SessionEndReason.hostEnded,
@@ -291,7 +295,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     if (state == SessionState.connected) {
       _saveSessionRecord();
     } else if (state == SessionState.error) {
-      SessionHistory.update(
+      _historyRepo.update(
         widget.pairing.sessionId,
         lastActiveAt: DateTime.now(),
         endReason: SessionEndReason.connectionLost,
@@ -304,7 +308,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
       toolName: _session.toolName,
       lastActiveAt: DateTime.now(),
     );
-    SessionHistory.upsert(record);
+    _historyRepo.upsert(record);
   }
 
   void _showToast(String text) {
@@ -354,7 +358,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
 
     if (shouldDisconnect) {
       await _session.disconnect();
-      SessionHistory.update(
+      _historyRepo.update(
         widget.pairing.sessionId,
         lastActiveAt: DateTime.now(),
         endReason: SessionEndReason.userDisconnected,

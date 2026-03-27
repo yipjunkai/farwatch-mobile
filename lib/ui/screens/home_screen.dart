@@ -1,39 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../core/pairing.dart';
 import '../../core/session_history.dart';
+import '../../providers/session_history_provider.dart';
 import '../adaptive.dart';
 import 'scan_screen.dart';
 import 'terminal_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware {
-  List<SessionRecord> _sessions = [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSessions();
-  }
-
-  Future<void> _loadSessions() async {
-    final sessions = await SessionHistory.load();
-    if (mounted) {
-      setState(() {
-        _sessions = sessions;
-        _loading = false;
-      });
-    }
-  }
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   // ---------------------------------------------------------------------------
   // Navigation
@@ -54,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       adaptivePageRoute(builder: (_) => TerminalScreen(pairing: pairing)),
     )
         .then((_) {
-      _loadSessions();
+      // Refresh history when returning from terminal screen.
+      ref.invalidate(sessionHistoryProvider);
     });
   }
 
@@ -136,9 +121,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // Delete / clear
   // ---------------------------------------------------------------------------
 
-  void _deleteSession(SessionRecord record) async {
-    await SessionHistory.remove(record.sessionId);
-    _loadSessions();
+  void _deleteSession(SessionRecord record) {
+    ref.read(sessionHistoryProvider.notifier).remove(record.sessionId);
   }
 
   void _clearHistory() async {
@@ -150,8 +134,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       isDestructive: true,
     );
     if (confirmed) {
-      await SessionHistory.clear();
-      _loadSessions();
+      ref.read(sessionHistoryProvider.notifier).clear();
     }
   }
 
@@ -274,12 +257,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // Session list
   // ---------------------------------------------------------------------------
 
-  Widget _buildSessionList() {
-    if (isApplePlatform) return _buildCupertinoSessionList();
-    return _buildMaterialSessionList();
+  Widget _buildSessionList(List<SessionRecord> sessions) {
+    if (isApplePlatform) return _buildCupertinoSessionList(sessions);
+    return _buildMaterialSessionList(sessions);
   }
 
-  Widget _buildMaterialSessionList() {
+  Widget _buildMaterialSessionList(List<SessionRecord> sessions) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -297,12 +280,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         ),
         Expanded(
           child: ListView.separated(
-            itemCount: _sessions.length,
+            itemCount: sessions.length,
             separatorBuilder: (_, _) => Divider(
               height: 1,
               color: Colors.grey[900],
             ),
-            itemBuilder: (_, i) => _buildMaterialTile(_sessions[i]),
+            itemBuilder: (_, i) => _buildMaterialTile(sessions[i]),
           ),
         ),
       ],
@@ -356,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildCupertinoSessionList() {
+  Widget _buildCupertinoSessionList(List<SessionRecord> sessions) {
     return CustomScrollView(
       slivers: [
         SliverSafeArea(
@@ -365,8 +348,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildCupertinoTile(_sessions[index]),
-                childCount: _sessions.length,
+                (context, index) => _buildCupertinoTile(sessions[index]),
+                childCount: sessions.length,
               ),
             ),
           ),
@@ -457,11 +440,15 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    if (isApplePlatform) return _buildCupertinoScreen();
-    return _buildMaterialScreen();
+    final asyncSessions = ref.watch(sessionHistoryProvider);
+    if (isApplePlatform) return _buildCupertinoScreen(asyncSessions);
+    return _buildMaterialScreen(asyncSessions);
   }
 
-  Widget _buildMaterialScreen() {
+  Widget _buildMaterialScreen(AsyncValue<List<SessionRecord>> asyncSessions) {
+    final sessions = asyncSessions.valueOrNull ?? [];
+    final loading = asyncSessions.isLoading && !asyncSessions.hasValue;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -469,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
-          if (_sessions.isNotEmpty)
+          if (sessions.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
               tooltip: 'Clear history',
@@ -477,12 +464,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             ),
         ],
       ),
-      body: _loading
+      body: loading
           ? const Center(child: CircularProgressIndicator())
-          : _sessions.isEmpty
+          : sessions.isEmpty
               ? _buildEmptyState()
-              : _buildSessionList(),
-      floatingActionButton: _sessions.isNotEmpty
+              : _buildSessionList(sessions),
+      floatingActionButton: sessions.isNotEmpty
           ? FloatingActionButton(
               onPressed: _openScanner,
               tooltip: 'Scan QR Code',
@@ -492,7 +479,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildCupertinoScreen() {
+  Widget _buildCupertinoScreen(AsyncValue<List<SessionRecord>> asyncSessions) {
+    final sessions = asyncSessions.valueOrNull ?? [];
+    final loading = asyncSessions.isLoading && !asyncSessions.hasValue;
+
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.black,
       navigationBar: CupertinoNavigationBar(
@@ -501,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           'Farwatch',
           style: TextStyle(color: CupertinoColors.white),
         ),
-        leading: _sessions.isNotEmpty
+        leading: sessions.isNotEmpty
             ? CupertinoButton(
                 padding: EdgeInsets.zero,
                 minimumSize: Size.zero,
@@ -526,11 +516,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       ),
       child: SafeArea(
         top: false,
-        child: _loading
+        child: loading
             ? const Center(child: CupertinoActivityIndicator())
-            : _sessions.isEmpty
+            : sessions.isEmpty
                 ? _buildEmptyState()
-                : _buildSessionList(),
+                : _buildSessionList(sessions),
       ),
     );
   }

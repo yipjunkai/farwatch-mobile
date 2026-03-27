@@ -1,7 +1,3 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'pairing.dart';
 
 /// A record of a previous terminal session, persisted locally.
@@ -110,79 +106,4 @@ enum SessionEndReason {
 
   /// Connection lost (network error, relay error).
   connectionLost,
-}
-
-// ---------------------------------------------------------------------------
-// SessionHistory — persists session records via SharedPreferences
-// ---------------------------------------------------------------------------
-
-class SessionHistory {
-  static const _key = 'session_history';
-  static const _maxRecords = 50;
-
-  static Future<List<SessionRecord>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null) return [];
-
-    try {
-      final list = jsonDecode(raw) as List<dynamic>;
-      return list
-          .map((e) => SessionRecord.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  static Future<void> _save(List<SessionRecord> records) async {
-    final prefs = await SharedPreferences.getInstance();
-    // Keep only the most recent N records.
-    final trimmed = records.length > _maxRecords
-        ? records.sublist(0, _maxRecords)
-        : records;
-    await prefs.setString(_key, jsonEncode(trimmed.map((r) => r.toJson()).toList()));
-  }
-
-  /// Add or update a session record. If a record with the same sessionId
-  /// already exists, it is updated (moved to the top). Otherwise a new
-  /// record is prepended.
-  static Future<void> upsert(SessionRecord record) async {
-    final records = await load();
-    records.removeWhere((r) => r.sessionId == record.sessionId);
-    records.insert(0, record);
-    await _save(records);
-  }
-
-  /// Update only the fields that changed for an existing session.
-  static Future<void> update(
-    String sessionId, {
-    String? toolName,
-    DateTime? lastActiveAt,
-    SessionEndReason? endReason,
-  }) async {
-    final records = await load();
-    final idx = records.indexWhere((r) => r.sessionId == sessionId);
-    if (idx == -1) return;
-
-    records[idx] = records[idx].copyWith(
-      toolName: toolName,
-      lastActiveAt: lastActiveAt,
-      endReason: endReason,
-    );
-    await _save(records);
-  }
-
-  /// Remove a single session record.
-  static Future<void> remove(String sessionId) async {
-    final records = await load();
-    records.removeWhere((r) => r.sessionId == sessionId);
-    await _save(records);
-  }
-
-  /// Clear all session history.
-  static Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
-  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../core/session_history.dart';
+import '../../../theme/farwatch_colors.dart';
 import '../../adaptive.dart';
 
 /// A single session row in the history list.
@@ -38,6 +39,7 @@ class SessionTile extends StatelessWidget {
   }
 
   Widget _buildMaterial(BuildContext context) {
+    final c = context.colors;
     final endIcon = switch (record.endReason) {
       SessionEndReason.unknown => Icons.circle,
       SessionEndReason.userDisconnected => Icons.logout,
@@ -46,10 +48,10 @@ class SessionTile extends StatelessWidget {
     };
 
     final endColor = switch (record.endReason) {
-      SessionEndReason.unknown => Colors.grey,
-      SessionEndReason.userDisconnected => Colors.grey,
-      SessionEndReason.hostEnded => Colors.orange,
-      SessionEndReason.connectionLost => Colors.red,
+      SessionEndReason.unknown => c.statusNeutral,
+      SessionEndReason.userDisconnected => c.statusNeutral,
+      SessionEndReason.hostEnded => c.sessionHostEnded,
+      SessionEndReason.connectionLost => c.sessionLost,
     };
 
     final icon = toolIcon(record.toolName);
@@ -61,19 +63,18 @@ class SessionTile extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        color: Colors.red[900],
-        child: const Icon(Icons.delete, color: Colors.white),
+        color: c.destructive,
+        child: Icon(Icons.delete, color: c.destructiveOnSurface),
       ),
       onDismissed: (_) => onDelete(),
       child: ListTile(
-        leading: Icon(icon, color: Colors.teal, size: 28),
+        leading: Icon(icon, color: c.accent, size: 28),
         title: Text(
           record.displayName,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w500),
+          style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w500),
         ),
         subtitle:
-            Text(ago, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            Text(ago, style: TextStyle(color: c.textTertiary, fontSize: 12)),
         trailing: Icon(endIcon, size: 14, color: endColor),
         onTap: onTap,
       ),
@@ -81,6 +82,7 @@ class SessionTile extends StatelessWidget {
   }
 
   Widget _buildCupertino(BuildContext context) {
+    final c = context.colors;
     final endIcon = switch (record.endReason) {
       SessionEndReason.unknown => CupertinoIcons.circle,
       SessionEndReason.userDisconnected => CupertinoIcons.square_arrow_right,
@@ -89,10 +91,10 @@ class SessionTile extends StatelessWidget {
     };
 
     final endColor = switch (record.endReason) {
-      SessionEndReason.unknown => Colors.grey,
-      SessionEndReason.userDisconnected => Colors.grey,
-      SessionEndReason.hostEnded => Colors.orange,
-      SessionEndReason.connectionLost => Colors.red,
+      SessionEndReason.unknown => c.statusNeutral,
+      SessionEndReason.userDisconnected => c.statusNeutral,
+      SessionEndReason.hostEnded => c.sessionHostEnded,
+      SessionEndReason.connectionLost => c.sessionLost,
     };
 
     final icon = toolIcon(record.toolName);
@@ -105,11 +107,10 @@ class SessionTile extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         decoration: BoxDecoration(
-          color: CupertinoColors.destructiveRed,
+          color: c.destructive,
           borderRadius: BorderRadius.circular(10),
         ),
-        child:
-            const Icon(CupertinoIcons.delete, color: CupertinoColors.white),
+        child: Icon(CupertinoIcons.delete, color: c.destructiveOnSurface),
       ),
       onDismissed: (_) => onDelete(),
       child: GlassContainer(
@@ -121,7 +122,7 @@ class SessionTile extends StatelessWidget {
           onPressed: onTap,
           child: Row(
             children: [
-              Icon(icon, color: CupertinoColors.systemTeal, size: 28),
+              Icon(icon, color: c.accent, size: 28),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -129,23 +130,22 @@ class SessionTile extends StatelessWidget {
                   children: [
                     Text(
                       record.displayName,
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
+                      style: TextStyle(
+                        color: c.textPrimary,
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(ago,
-                        style:
-                            TextStyle(color: Colors.grey[500], fontSize: 12)),
+                        style: TextStyle(color: c.textTertiary, fontSize: 12)),
                   ],
                 ),
               ),
               Icon(endIcon, size: 14, color: endColor),
               const SizedBox(width: 4),
-              const Icon(CupertinoIcons.chevron_right,
-                  size: 16, color: CupertinoColors.systemGrey),
+              Icon(CupertinoIcons.chevron_right,
+                  size: 16, color: c.statusNeutral),
             ],
           ),
         ),

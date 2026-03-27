@@ -11,6 +11,7 @@ import '../../providers/agent_state_provider.dart';
 import '../../providers/speech_provider.dart';
 import '../../providers/terminal_session_provider.dart';
 import '../../relay/session.dart';
+import '../../theme/farwatch_colors.dart';
 import '../adaptive.dart';
 import '../widgets/agent/structured_view.dart';
 import '../widgets/terminal/connection_status_bar.dart';
@@ -194,13 +195,14 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
 
   Widget _buildMaterialShell(
       Widget body, TerminalSessionState ts, AgentState agent) {
+    final c = context.colors;
     return Scaffold(
       resizeToAvoidBottomInset: agent.showStructuredView,
-      backgroundColor: Colors.black,
+      backgroundColor: c.background,
       appBar: AppBar(
         title: const Text('Terminal'),
-        backgroundColor: Colors.grey[900],
-        foregroundColor: Colors.white,
+        backgroundColor: c.surfacePrimary,
+        foregroundColor: c.textPrimary,
         leading:
             IconButton(icon: const Icon(Icons.arrow_back), onPressed: _close),
         actions: [
@@ -243,19 +245,18 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
 
   Widget _buildCupertinoShell(
       Widget body, TerminalSessionState ts, AgentState agent) {
+    final c = context.colors;
     return CupertinoPageScaffold(
       resizeToAvoidBottomInset: agent.showStructuredView,
-      backgroundColor: CupertinoColors.black,
+      backgroundColor: c.background,
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: const Color(0xB01C1C1E),
-        middle: const Text('Terminal',
-            style: TextStyle(color: CupertinoColors.white)),
+        backgroundColor: c.navBarBackground,
+        middle: Text('Terminal', style: TextStyle(color: c.textPrimary)),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           minimumSize: Size.zero,
           onPressed: _close,
-          child: const Icon(CupertinoIcons.back,
-              color: CupertinoColors.systemTeal, size: 22),
+          child: Icon(CupertinoIcons.back, color: c.accent, size: 22),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -268,8 +269,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                 onPressed: () => ref
                     .read(terminalSessionProvider(widget.pairing).notifier)
                     .connect(),
-                child: const Icon(CupertinoIcons.refresh,
-                    color: CupertinoColors.white, size: 20),
+                child: Icon(CupertinoIcons.refresh,
+                    color: c.textPrimary, size: 20),
               ),
             if (agent.hasStructuredEvents)
               CupertinoButton(
@@ -281,7 +282,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                   agent.showStructuredView
                       ? Icons.terminal
                       : CupertinoIcons.sparkles,
-                  color: CupertinoColors.white,
+                  color: c.textPrimary,
                   size: 20,
                 ),
               ),
@@ -295,8 +296,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                   onSendCtrl: _sendCtrl,
                   onPaste: _pasteClipboard,
                 ),
-                child: const Icon(CupertinoIcons.command,
-                    color: CupertinoColors.white, size: 20),
+                child: Icon(CupertinoIcons.command,
+                    color: c.textPrimary, size: 20),
               ),
           ],
         ),

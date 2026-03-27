@@ -4,17 +4,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/speech_provider.dart';
+import '../../../theme/farwatch_colors.dart';
 import '../../adaptive.dart';
 
 /// Floating mic button for starting/stopping speech-to-text.
-/// Renders as a [FloatingActionButton] on Android and a pill-shaped
-/// [CupertinoButton] on iOS.
 class MicButton extends ConsumerWidget {
   const MicButton({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final speech = ref.watch(speechProvider);
+    final c = context.colors;
 
     void toggle() {
       if (speech.listening) {
@@ -28,26 +28,24 @@ class MicButton extends ConsumerWidget {
     if (isApplePlatform) {
       return CupertinoButton(
         padding: const EdgeInsets.all(14),
-        color: speech.listening
-            ? CupertinoColors.destructiveRed
-            : const Color(0xCC3A3A3C),
+        color: speech.listening ? c.micActive : c.micIdle,
         borderRadius: BorderRadius.circular(28),
         onPressed: toggle,
         child: Icon(
           speech.listening ? CupertinoIcons.mic_fill : CupertinoIcons.mic,
-          color: speech.listening ? CupertinoColors.white : Colors.grey[400],
+          color: speech.listening ? c.textPrimary : c.textSecondary,
           size: 22,
         ),
       );
     }
 
     return FloatingActionButton(
-      backgroundColor: speech.listening ? Colors.redAccent : Colors.grey[800],
+      backgroundColor: speech.listening ? c.micActive : c.micIdle,
       onPressed: toggle,
       tooltip: speech.listening ? 'Tap to stop' : 'Tap to speak',
       child: Icon(
         speech.listening ? Icons.mic : Icons.mic_none,
-        color: speech.listening ? Colors.white : Colors.grey[400],
+        color: speech.listening ? c.textPrimary : c.textSecondary,
         size: 24,
       ),
     );

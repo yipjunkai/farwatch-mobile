@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/pairing.dart';
+import '../../theme/farwatch_colors.dart';
 import '../adaptive.dart';
 
 /// Dedicated QR scanner screen. Returns a [PairingUri] via Navigator.pop
@@ -51,6 +52,7 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Widget _buildErrorView(MobileScannerException error) {
+    final c = context.colors;
     final message = switch (error.errorCode) {
       MobileScannerErrorCode.permissionDenied =>
         'Camera permission denied.\n\nGo to Settings > Apps > Farwatch > Permissions and enable Camera.',
@@ -65,12 +67,12 @@ class _ScanScreenState extends State<ScanScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.no_photography, size: 64, color: Colors.grey[600]),
+            Icon(Icons.no_photography, size: 64, color: c.textPlaceholder),
             const SizedBox(height: 24),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+              style: TextStyle(color: c.textSecondary, fontSize: 14),
             ),
           ],
         ),
@@ -79,6 +81,7 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Widget _buildBody() {
+    final c = context.colors;
     return Column(
       children: [
         Expanded(
@@ -93,7 +96,7 @@ class _ScanScreenState extends State<ScanScreen> {
           child: Text(
             'Point your camera at the QR code shown by\nfarwatch start',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            style: TextStyle(color: c.textSecondary, fontSize: 14),
           ),
         ),
       ],

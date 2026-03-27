@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/farwatch_colors.dart';
+
 /// Animated pulsing red dot indicator for active speech recording.
 class PulsingDot extends StatefulWidget {
   const PulsingDot({super.key});
@@ -29,6 +31,7 @@ class _PulsingDotState extends State<PulsingDot>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) => Container(
@@ -36,8 +39,7 @@ class _PulsingDotState extends State<PulsingDot>
         height: 10,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.redAccent
-              .withValues(alpha: 0.5 + _controller.value * 0.5),
+          color: c.micActive.withValues(alpha: 0.5 + _controller.value * 0.5),
         ),
       ),
     );

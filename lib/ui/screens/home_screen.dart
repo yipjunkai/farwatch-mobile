@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/pairing.dart';
 import '../../core/session_history.dart';
 import '../../providers/session_history_provider.dart';
+import '../../theme/farwatch_colors.dart';
 import '../adaptive.dart';
 import '../widgets/home/empty_state.dart';
 import '../widgets/home/manual_entry_sheet.dart';
@@ -86,6 +87,7 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildSessionList(
       BuildContext context, WidgetRef ref, List<SessionRecord> sessions) {
+    final c = context.colors;
     if (isApplePlatform) {
       return CustomScrollView(
         slivers: [
@@ -120,7 +122,7 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text('Recent Sessions',
               style: TextStyle(
-                  color: Colors.grey[500],
+                  color: c.textTertiary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5)),
@@ -129,7 +131,7 @@ class HomeScreen extends ConsumerWidget {
           child: ListView.separated(
             itemCount: sessions.length,
             separatorBuilder: (_, _) =>
-                Divider(height: 1, color: Colors.grey[900]),
+                Divider(height: 1, color: c.surfacePrimary),
             itemBuilder: (_, i) => SessionTile(
               record: sessions[i],
               onTap: () => _reconnectSession(context, ref, sessions[i]),
@@ -149,12 +151,13 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildMaterialScreen(BuildContext context, WidgetRef ref,
       List<SessionRecord> sessions, bool loading) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: c.background,
       appBar: AppBar(
         title: const Text('Farwatch'),
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        foregroundColor: c.textPrimary,
         actions: [
           if (sessions.isNotEmpty)
             IconButton(
@@ -186,27 +189,27 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildCupertinoScreen(BuildContext context, WidgetRef ref,
       List<SessionRecord> sessions, bool loading) {
+    final c = context.colors;
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.black,
+      backgroundColor: c.background,
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: const Color(0xB01C1C1E),
-        middle: const Text('Farwatch',
-            style: TextStyle(color: CupertinoColors.white)),
+        backgroundColor: c.navBarBackground,
+        middle: Text('Farwatch', style: TextStyle(color: c.textPrimary)),
         leading: sessions.isNotEmpty
             ? CupertinoButton(
                 padding: EdgeInsets.zero,
                 minimumSize: Size.zero,
                 onPressed: () => _clearHistory(context, ref),
-                child: const Icon(CupertinoIcons.trash,
-                    size: 20, color: CupertinoColors.systemGrey),
+                child: Icon(CupertinoIcons.trash,
+                    size: 20, color: c.statusNeutral),
               )
             : null,
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           minimumSize: Size.zero,
           onPressed: () => _openScanner(context, ref),
-          child: const Icon(CupertinoIcons.qrcode_viewfinder,
-              size: 22, color: CupertinoColors.systemTeal),
+          child: Icon(CupertinoIcons.qrcode_viewfinder,
+              size: 22, color: c.accent),
         ),
       ),
       child: SafeArea(

@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/speech_provider.dart';
+import '../../../theme/farwatch_colors.dart';
 import '../../adaptive.dart';
 import 'pulsing_dot.dart';
 
-/// Overlay that appears during active speech recognition, showing
-/// the live transcript.
+/// Overlay that appears during active speech recognition.
 class ListeningOverlay extends ConsumerWidget {
   const ListeningOverlay({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final speech = ref.watch(speechProvider);
+    final c = context.colors;
     return Positioned(
       bottom: 80 + MediaQuery.of(context).padding.bottom,
       left: 24,
@@ -30,8 +31,8 @@ class ListeningOverlay extends ConsumerWidget {
                     : speech.liveTranscript,
                 style: TextStyle(
                   color: speech.liveTranscript.isEmpty
-                      ? Colors.grey[400]
-                      : Colors.white,
+                      ? c.textSecondary
+                      : c.textPrimary,
                   fontSize: 14,
                   fontStyle: speech.liveTranscript.isEmpty
                       ? FontStyle.italic

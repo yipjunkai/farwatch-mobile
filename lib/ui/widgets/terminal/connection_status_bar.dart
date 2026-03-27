@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/pairing.dart';
 import '../../../providers/terminal_session_provider.dart';
 import '../../../relay/session.dart';
+import '../../../theme/farwatch_colors.dart';
 import '../../adaptive.dart';
 
 /// Connection status strip shown at the top of the terminal screen.
@@ -16,16 +17,17 @@ class ConnectionStatusBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ts = ref.watch(terminalSessionProvider(pairing));
+    final c = context.colors;
 
     final (icon, label, color) = switch (ts.sessionState) {
-      SessionState.disconnected    => (Icons.link_off, 'Disconnected', Colors.grey),
-      SessionState.connecting      => (Icons.sync, 'Connecting...', Colors.orange),
-      SessionState.waitingForPeer  => (Icons.hourglass_empty, 'Waiting for host...', Colors.orange),
-      SessionState.handshaking     => (Icons.handshake, 'Key exchange...', Colors.amber),
-      SessionState.awaitingConfirm => (Icons.handshake, 'Verifying...', Colors.amber),
-      SessionState.connected       => (Icons.lock, 'Connected (E2E encrypted)', Colors.green),
-      SessionState.reconnecting    => (Icons.sync, 'Reconnecting...', Colors.orange),
-      SessionState.error           => (Icons.error, ts.error ?? 'Error', Colors.red),
+      SessionState.disconnected    => (Icons.link_off, 'Disconnected', c.statusNeutral),
+      SessionState.connecting      => (Icons.sync, 'Connecting...', c.statusConnecting),
+      SessionState.waitingForPeer  => (Icons.hourglass_empty, 'Waiting for host...', c.statusConnecting),
+      SessionState.handshaking     => (Icons.handshake, 'Key exchange...', c.statusWarning),
+      SessionState.awaitingConfirm => (Icons.handshake, 'Verifying...', c.statusWarning),
+      SessionState.connected       => (Icons.lock, 'Connected (E2E encrypted)', c.statusConnected),
+      SessionState.reconnecting    => (Icons.sync, 'Reconnecting...', c.statusConnecting),
+      SessionState.error           => (Icons.error, ts.error ?? 'Error', c.statusError),
     };
 
     final showReconnect = ts.sessionState == SessionState.error ||
@@ -38,7 +40,7 @@ class ConnectionStatusBar extends ConsumerWidget {
       return GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         borderRadius: 0,
-        color: const Color(0x801C1C1E),
+        color: c.statusBarSurface,
         child: Row(
           children: [
             Icon(icon, size: 14, color: color),
@@ -52,7 +54,7 @@ class ConnectionStatusBar extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(ts.toolName!,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    style: TextStyle(color: c.textTertiary, fontSize: 12)),
               ),
             if (showReconnect)
               CupertinoButton(
@@ -60,7 +62,7 @@ class ConnectionStatusBar extends ConsumerWidget {
                 minimumSize: Size.zero,
                 onPressed: reconnect,
                 child: Icon(CupertinoIcons.refresh,
-                    size: 16, color: Colors.grey[400]),
+                    size: 16, color: c.textSecondary),
               ),
           ],
         ),
@@ -68,7 +70,7 @@ class ConnectionStatusBar extends ConsumerWidget {
     }
 
     return Container(
-      color: Colors.grey[900],
+      color: c.surfacePrimary,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         children: [
@@ -83,12 +85,12 @@ class ConnectionStatusBar extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Text(ts.toolName!,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  style: TextStyle(color: c.textTertiary, fontSize: 12)),
             ),
           if (showReconnect)
             GestureDetector(
               onTap: reconnect,
-              child: Icon(Icons.refresh, size: 16, color: Colors.grey[400]),
+              child: Icon(Icons.refresh, size: 16, color: c.textSecondary),
             ),
         ],
       ),

@@ -11,6 +11,8 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/farwatch_colors.dart';
+
 // ---------------------------------------------------------------------------
 // Platform detection
 // ---------------------------------------------------------------------------
@@ -19,22 +21,16 @@ import 'package:flutter/material.dart';
 bool get isApplePlatform => Platform.isIOS || Platform.isMacOS;
 
 // ---------------------------------------------------------------------------
-// Colors (shared dark palette)
+// Constants for overlay contexts where Theme is not available
 // ---------------------------------------------------------------------------
 
-/// Tinted dark surface used for glass-style containers on iOS.
-const _kGlassDark = Color(0xCC1C1C1E); // iOS system gray6 dark @ 80%
-const _kGlassBorder = Color(0x33FFFFFF); // subtle white edge
+const _kGlassDark = Color(0xCC1C1C1E);
+const _kGlassBorder = Color(0x33FFFFFF);
 
 // ---------------------------------------------------------------------------
 // AdaptiveScaffold
 // ---------------------------------------------------------------------------
 
-/// A page scaffold that renders [CupertinoPageScaffold] on iOS and [Scaffold]
-/// on Android.
-///
-/// On iOS the [navigationBar] is a [CupertinoNavigationBar] with translucent
-/// background (liquid glass) that blurs content scrolling beneath it.
 class AdaptiveScaffold extends StatelessWidget {
   final String title;
   final Widget body;
@@ -55,14 +51,14 @@ class AdaptiveScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     if (isApplePlatform) {
       return CupertinoPageScaffold(
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        backgroundColor: backgroundColor ?? CupertinoColors.black,
+        backgroundColor: backgroundColor ?? c.background,
         navigationBar: CupertinoNavigationBar(
-          // Translucent background → framework applies backdrop blur (liquid glass).
-          backgroundColor: const Color(0xB01C1C1E),
-          middle: Text(title, style: const TextStyle(color: CupertinoColors.white)),
+          backgroundColor: c.navBarBackground,
+          middle: Text(title, style: TextStyle(color: c.textPrimary)),
           leading: leading,
           trailing: trailing.isEmpty
               ? null
@@ -75,11 +71,11 @@ class AdaptiveScaffold extends StatelessWidget {
     }
     return Scaffold(
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      backgroundColor: backgroundColor ?? Colors.black,
+      backgroundColor: backgroundColor ?? c.background,
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Colors.grey[900],
-        foregroundColor: Colors.white,
+        backgroundColor: c.surfacePrimary,
+        foregroundColor: c.textPrimary,
         leading: leading,
         actions: trailing,
       ),
@@ -89,11 +85,9 @@ class AdaptiveScaffold extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// AdaptiveScaffoldRaw — for screens that need full control over the nav bar
+// AdaptiveScaffoldRaw
 // ---------------------------------------------------------------------------
 
-/// Like [AdaptiveScaffold] but accepts a pre-built nav bar widget instead of
-/// title/leading/trailing. Useful for complex app bars (e.g. terminal screen).
 class AdaptiveScaffoldRaw extends StatelessWidget {
   final ObstructingPreferredSizeWidget? cupertinoNavBar;
   final PreferredSizeWidget? materialAppBar;
@@ -114,14 +108,13 @@ class AdaptiveScaffoldRaw extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     if (isApplePlatform) {
       return CupertinoPageScaffold(
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        backgroundColor: backgroundColor ?? CupertinoColors.black,
+        backgroundColor: backgroundColor ?? c.background,
         navigationBar: cupertinoNavBar ??
-            const CupertinoNavigationBar(
-              backgroundColor: Color(0xB01C1C1E),
-            ),
+            CupertinoNavigationBar(backgroundColor: c.navBarBackground),
         child: floatingActionButton != null
             ? Stack(children: [body, floatingActionButton!])
             : body,
@@ -129,7 +122,7 @@ class AdaptiveScaffoldRaw extends StatelessWidget {
     }
     return Scaffold(
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      backgroundColor: backgroundColor ?? Colors.black,
+      backgroundColor: backgroundColor ?? c.background,
       appBar: materialAppBar,
       body: body,
       floatingActionButton: floatingActionButton,
@@ -138,13 +131,9 @@ class AdaptiveScaffoldRaw extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Dialogs — uses Flutter's built-in AlertDialog.adaptive()
+// Dialogs
 // ---------------------------------------------------------------------------
 
-/// Show a confirmation dialog. Returns `true` if the user confirmed.
-///
-/// Uses [AlertDialog.adaptive] which automatically renders
-/// [CupertinoAlertDialog] on iOS and [AlertDialog] on Android.
 Future<bool> showAdaptiveConfirmDialog({
   required BuildContext context,
   required String title,
@@ -179,8 +168,9 @@ Future<bool> showAdaptiveConfirmDialog({
                 onPressed: () => Navigator.of(ctx).pop(true),
                 child: Text(
                   confirmLabel,
-                  style:
-                      isDestructive ? const TextStyle(color: Colors.red) : null,
+                  style: isDestructive
+                      ? TextStyle(color: context.colors.statusError)
+                      : null,
                 ),
               ),
             ],
@@ -190,10 +180,9 @@ Future<bool> showAdaptiveConfirmDialog({
 }
 
 // ---------------------------------------------------------------------------
-// Action sheets / bottom sheets
+// Action sheets
 // ---------------------------------------------------------------------------
 
-/// Data model for an action in [showAdaptiveActionSheet].
 class AdaptiveAction {
   final IconData? icon;
   final String label;
@@ -210,15 +199,12 @@ class AdaptiveAction {
   });
 }
 
-/// Show a platform-appropriate action sheet.
-///
-/// iOS: [CupertinoActionSheet] (frosted glass popup from bottom).
-/// Android: Material [BottomSheet] with a list of options.
 Future<void> showAdaptiveActionSheet({
   required BuildContext context,
   String? title,
   required List<AdaptiveAction> actions,
 }) async {
+  final c = context.colors;
   if (isApplePlatform) {
     await showCupertinoModalPopup<void>(
       context: context,
@@ -227,17 +213,11 @@ Future<void> showAdaptiveActionSheet({
         actions: actions.map((a) {
           return CupertinoActionSheetAction(
             isDestructiveAction: a.isDestructive,
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              a.onTap();
-            },
+            onPressed: () { Navigator.of(ctx).pop(); a.onTap(); },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (a.icon != null) ...[
-                  Icon(a.icon, size: 20),
-                  const SizedBox(width: 8),
-                ],
+                if (a.icon != null) ...[Icon(a.icon, size: 20), const SizedBox(width: 8)],
                 Text(a.label),
               ],
             ),
@@ -252,7 +232,7 @@ Future<void> showAdaptiveActionSheet({
   } else {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: c.surfacePrimary,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -261,48 +241,29 @@ Future<void> showAdaptiveActionSheet({
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
-                width: 36,
-                height: 4,
+                width: 36, height: 4,
                 margin: const EdgeInsets.only(top: 8, bottom: 8),
                 decoration: BoxDecoration(
-                  color: Colors.grey[700],
+                  color: c.surfaceTertiary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               if (title != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: Text(title, style: TextStyle(color: c.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                 ),
               ...actions.map((a) {
                 return ListTile(
                   leading: a.icon != null
-                      ? Icon(a.icon,
-                          color: a.isDestructive ? Colors.red : Colors.white)
+                      ? Icon(a.icon, color: a.isDestructive ? c.statusError : c.textPrimary)
                       : null,
-                  title: Text(
-                    a.label,
-                    style: TextStyle(
-                      color: a.isDestructive ? Colors.red : Colors.white,
-                    ),
-                  ),
+                  title: Text(a.label, style: TextStyle(color: a.isDestructive ? c.statusError : c.textPrimary)),
                   subtitle: a.subtitle != null
-                      ? Text(a.subtitle!,
-                          style: TextStyle(color: Colors.grey[500], fontSize: 12))
+                      ? Text(a.subtitle!, style: TextStyle(color: c.textTertiary, fontSize: 12))
                       : null,
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    a.onTap();
-                  },
+                  onTap: () { Navigator.of(ctx).pop(); a.onTap(); },
                 );
               }),
               const SizedBox(height: 8),
@@ -315,11 +276,9 @@ Future<void> showAdaptiveActionSheet({
 }
 
 // ---------------------------------------------------------------------------
-// Glass container (iOS liquid glass effect for custom surfaces)
+// Glass container
 // ---------------------------------------------------------------------------
 
-/// A container with frosted-glass appearance on iOS (blur + translucent fill)
-/// and a simple dark card on Android.
 class GlassContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -338,6 +297,7 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     if (isApplePlatform) {
       return Container(
         margin: margin,
@@ -348,9 +308,9 @@ class GlassContainer extends StatelessWidget {
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
-                color: color ?? _kGlassDark,
+                color: color ?? c.glassSurface,
                 borderRadius: BorderRadius.circular(borderRadius),
-                border: Border.all(color: _kGlassBorder, width: 0.5),
+                border: Border.all(color: c.glassBorder, width: 0.5),
               ),
               child: child,
             ),
@@ -362,7 +322,7 @@ class GlassContainer extends StatelessWidget {
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? Colors.grey[900],
+        color: color ?? c.surfacePrimary,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: child,
@@ -371,19 +331,17 @@ class GlassContainer extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Snackbar / toast
+// Toast
 // ---------------------------------------------------------------------------
 
-/// Show a brief notification. iOS uses an overlay toast; Android uses SnackBar.
 void showAdaptiveToast(BuildContext context, String message) {
   if (isApplePlatform) {
-    // Overlay toast that auto-dismisses (iOS style).
     final overlay = Overlay.of(context);
     final entry = OverlayEntry(
+      // Overlay callbacks don't have Theme access, so use constants.
       builder: (ctx) => Positioned(
         bottom: MediaQuery.of(ctx).padding.bottom + 80,
-        left: 32,
-        right: 32,
+        left: 32, right: 32,
         child: Center(
           child: Material(
             color: Colors.transparent,
@@ -398,11 +356,9 @@ void showAdaptiveToast(BuildContext context, String message) {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: _kGlassBorder, width: 0.5),
                   ),
-                  child: Text(
-                    message,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text(message,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      textAlign: TextAlign.center),
                 ),
               ),
             ),
@@ -413,9 +369,7 @@ void showAdaptiveToast(BuildContext context, String message) {
     overlay.insert(entry);
     Future.delayed(const Duration(seconds: 3), () => entry.remove());
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -423,19 +377,15 @@ void showAdaptiveToast(BuildContext context, String message) {
 // Page route helper
 // ---------------------------------------------------------------------------
 
-/// Create a platform-appropriate page route.
 Route<T> adaptivePageRoute<T>({required WidgetBuilder builder}) {
-  if (isApplePlatform) {
-    return CupertinoPageRoute<T>(builder: builder);
-  }
+  if (isApplePlatform) return CupertinoPageRoute<T>(builder: builder);
   return MaterialPageRoute<T>(builder: builder);
 }
 
 // ---------------------------------------------------------------------------
-// Adaptive icon button (used in nav bars)
+// Adaptive icon button
 // ---------------------------------------------------------------------------
 
-/// A tappable icon that uses [CupertinoButton] on iOS and [IconButton] on Android.
 class AdaptiveIconButton extends StatelessWidget {
   final IconData icon;
   final String? tooltip;
@@ -452,12 +402,13 @@ class AdaptiveIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     if (isApplePlatform) {
       return CupertinoButton(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         minimumSize: Size.zero,
         onPressed: onPressed,
-        child: Icon(icon, color: color ?? CupertinoColors.white, size: 22),
+        child: Icon(icon, color: color ?? c.textPrimary, size: 22),
       );
     }
     return IconButton(

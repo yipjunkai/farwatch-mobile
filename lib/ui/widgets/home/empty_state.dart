@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/farwatch_colors.dart';
 import '../../adaptive.dart';
 
 /// "No sessions yet" placeholder with scan and paste URI buttons.
@@ -17,18 +18,19 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(48),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.terminal, size: 64, color: Colors.grey[700]),
+            Icon(Icons.terminal, size: 64, color: c.surfaceTertiary),
             const SizedBox(height: 24),
             Text(
               'No sessions yet',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: c.textSecondary,
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
               ),
@@ -37,7 +39,7 @@ class EmptyState extends StatelessWidget {
             Text(
               'Run farwatch start on your computer,\nthen scan the QR code to connect.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(color: c.textPlaceholder, fontSize: 14),
             ),
             const SizedBox(height: 32),
             if (isApplePlatform) ...[

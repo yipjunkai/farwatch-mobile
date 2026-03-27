@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/pairing.dart';
 import '../../../providers/agent_state_provider.dart';
 import '../../../providers/terminal_session_provider.dart';
+import '../../../theme/farwatch_colors.dart';
 import 'agent_message_card.dart';
 import 'cost_ticker.dart';
 import 'prompt_bar.dart';
@@ -12,7 +13,6 @@ import 'todo_list.dart';
 /// The structured agent view: cost ticker, todos, message list, prompt bar.
 class StructuredView extends ConsumerStatefulWidget {
   final PairingUri pairing;
-
   const StructuredView({super.key, required this.pairing});
 
   @override
@@ -43,8 +43,6 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
   @override
   Widget build(BuildContext context) {
     final agent = ref.watch(agentStateProvider);
-
-    // Auto-scroll when messages change.
     if (agent.messages.isNotEmpty) _scrollToBottom();
 
     return Column(
@@ -53,7 +51,7 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
         const AgentTodoList(),
         Expanded(
           child: agent.messages.isEmpty
-              ? _buildEmptyState()
+              ? _EmptyAgentState(pairing: widget.pairing)
               : ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(12),
@@ -68,54 +66,53 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
       ],
     );
   }
+}
 
-  Widget _buildEmptyState() {
-    final ts = ref.read(terminalSessionProvider(widget.pairing));
+class _EmptyAgentState extends ConsumerWidget {
+  final PairingUri pairing;
+  const _EmptyAgentState({required this.pairing});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ts = ref.read(terminalSessionProvider(pairing));
+    final c = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_awesome, color: Colors.cyan[300], size: 40),
+            Icon(Icons.auto_awesome, color: c.sendActive, size: 40),
             const SizedBox(height: 16),
             Text(
               'Connected to ${ts.toolName ?? "agent"}',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500),
+              style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
               'Type a prompt below or use the desktop terminal.\n'
               'Activity will appear here as the agent works.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.grey[500], fontSize: 13, height: 1.5),
+              style: TextStyle(color: c.textTertiary, fontSize: 13, height: 1.5),
             ),
             const SizedBox(height: 16),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
+                color: c.infoSurface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.3)),
+                border: Border.all(color: c.infoBorder),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.info_outline,
-                      color: Colors.amber[300], size: 14),
+                  Icon(Icons.info_outline, color: c.infoAccent, size: 14),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       'Both devices can type at the same time. '
                       'Avoid sending while the desktop is typing.',
-                      style: TextStyle(
-                          color: Colors.amber[300], fontSize: 11),
+                      style: TextStyle(color: c.infoAccent, fontSize: 11),
                     ),
                   ),
                 ],

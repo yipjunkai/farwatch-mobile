@@ -1,11 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/farwatch_colors.dart';
 import '../../adaptive.dart';
 
 /// Show the terminal actions sheet (Ctrl+C, paste, etc.).
-///
-/// Uses [CupertinoActionSheet] on iOS and a Material [BottomSheet] on Android.
 void showTerminalActions(
   BuildContext context, {
   required void Function(List<int>) onSendBytes,
@@ -75,9 +74,10 @@ void _showMaterialActions(
   required void Function(String) onSendCtrl,
   required VoidCallback onPaste,
 }) {
+  final c = context.colors;
   showModalBottomSheet(
     context: context,
-    backgroundColor: Colors.grey[900],
+    backgroundColor: c.surfacePrimary,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
@@ -92,27 +92,27 @@ void _showMaterialActions(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[700],
+                  color: c.surfaceTertiary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              _section('Control', [
-                _tile(ctx, Icons.stop_circle_outlined, 'Interrupt', 'Ctrl+C', () => onSendCtrl('C')),
-                _tile(ctx, Icons.logout, 'EOF', 'Ctrl+D', () => onSendCtrl('D')),
-                _tile(ctx, Icons.pause_circle_outline, 'Suspend', 'Ctrl+Z', () => onSendCtrl('Z')),
-                _tile(ctx, Icons.refresh, 'Clear', 'Ctrl+L', () => onSendCtrl('L')),
+              _section(c, 'Control', [
+                _tile(c, ctx, Icons.stop_circle_outlined, 'Interrupt', 'Ctrl+C', () => onSendCtrl('C')),
+                _tile(c, ctx, Icons.logout, 'EOF', 'Ctrl+D', () => onSendCtrl('D')),
+                _tile(c, ctx, Icons.pause_circle_outline, 'Suspend', 'Ctrl+Z', () => onSendCtrl('Z')),
+                _tile(c, ctx, Icons.refresh, 'Clear', 'Ctrl+L', () => onSendCtrl('L')),
               ]),
               const SizedBox(height: 12),
-              _section('Navigate', [
-                _tile(ctx, Icons.arrow_upward, 'Previous', 'Up', () => onSendBytes([0x1b, 0x5b, 0x41])),
-                _tile(ctx, Icons.arrow_downward, 'Next', 'Down', () => onSendBytes([0x1b, 0x5b, 0x42])),
-                _tile(ctx, Icons.keyboard_tab, 'Tab', 'Tab', () => onSendBytes([0x09])),
-                _tile(ctx, Icons.first_page, 'Escape', 'Esc', () => onSendBytes([0x1b])),
+              _section(c, 'Navigate', [
+                _tile(c, ctx, Icons.arrow_upward, 'Previous', 'Up', () => onSendBytes([0x1b, 0x5b, 0x41])),
+                _tile(c, ctx, Icons.arrow_downward, 'Next', 'Down', () => onSendBytes([0x1b, 0x5b, 0x42])),
+                _tile(c, ctx, Icons.keyboard_tab, 'Tab', 'Tab', () => onSendBytes([0x09])),
+                _tile(c, ctx, Icons.first_page, 'Escape', 'Esc', () => onSendBytes([0x1b])),
               ]),
               const SizedBox(height: 12),
-              _section('Edit', [
-                _tile(ctx, Icons.content_paste, 'Paste', '', onPaste),
-                _tile(ctx, Icons.search, 'Search', 'Ctrl+R', () => onSendCtrl('R')),
+              _section(c, 'Edit', [
+                _tile(c, ctx, Icons.content_paste, 'Paste', '', onPaste),
+                _tile(c, ctx, Icons.search, 'Search', 'Ctrl+R', () => onSendCtrl('R')),
               ]),
             ],
           ),
@@ -122,7 +122,7 @@ void _showMaterialActions(
   );
 }
 
-Widget _section(String title, List<Widget> children) {
+Widget _section(FarwatchColors c, String title, List<Widget> children) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -130,7 +130,7 @@ Widget _section(String title, List<Widget> children) {
         padding: const EdgeInsets.only(left: 4, bottom: 8),
         child: Text(title,
             style: TextStyle(
-                color: Colors.grey[500],
+                color: c.textTertiary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5)),
@@ -140,10 +140,10 @@ Widget _section(String title, List<Widget> children) {
   );
 }
 
-Widget _tile(BuildContext ctx, IconData icon, String label, String shortcut,
-    VoidCallback onTap) {
+Widget _tile(FarwatchColors c, BuildContext ctx, IconData icon, String label,
+    String shortcut, VoidCallback onTap) {
   return Material(
-    color: Colors.grey[800],
+    color: c.surfaceSecondary,
     borderRadius: BorderRadius.circular(12),
     child: InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -154,14 +154,14 @@ Widget _tile(BuildContext ctx, IconData icon, String label, String shortcut,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
+            Icon(icon, color: c.textPrimary, size: 22),
             const SizedBox(height: 6),
             Text(label,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(color: c.textPrimary, fontSize: 12),
                 textAlign: TextAlign.center),
             if (shortcut.isNotEmpty)
               Text(shortcut,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 10)),
+                  style: TextStyle(color: c.textTertiary, fontSize: 10)),
           ],
         ),
       ),

@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/log.dart';
 import 'core/pairing.dart';
+import 'ui/adaptive.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/terminal_screen.dart';
 
@@ -68,12 +70,30 @@ class _FarwatchAppState extends State<FarwatchApp> {
 
   void _navigateToTerminal(PairingUri pairing) {
     _navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => TerminalScreen(pairing: pairing)),
+      adaptivePageRoute(builder: (_) => TerminalScreen(pairing: pairing)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isApplePlatform) {
+      return CupertinoApp(
+        title: 'Farwatch',
+        debugShowCheckedModeBanner: false,
+        navigatorKey: _navigatorKey,
+        theme: const CupertinoThemeData(
+          brightness: Brightness.dark,
+          primaryColor: CupertinoColors.systemTeal,
+          scaffoldBackgroundColor: CupertinoColors.black,
+          barBackgroundColor: Color(0xB01C1C1E),
+          textTheme: CupertinoTextThemeData(
+            primaryColor: CupertinoColors.white,
+          ),
+        ),
+        home: const HomeScreen(),
+      );
+    }
+
     return MaterialApp(
       title: 'Farwatch',
       debugShowCheckedModeBanner: false,

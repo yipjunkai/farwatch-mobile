@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/pairing.dart';
+import '../adaptive.dart';
 
 /// Dedicated QR scanner screen. Returns a [PairingUri] via Navigator.pop
 /// when a valid farwatch:// QR code is scanned.
@@ -45,67 +46,67 @@ class _ScanScreenState extends State<ScanScreen> {
       Navigator.of(context).pop(pairing);
     } catch (e) {
       _processed = false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid pairing URI: $e')),
-      );
+      showAdaptiveToast(context, 'Invalid pairing URI: $e');
     }
+  }
+
+  Widget _buildErrorView(MobileScannerException error) {
+    final message = switch (error.errorCode) {
+      MobileScannerErrorCode.permissionDenied =>
+        'Camera permission denied.\n\nGo to Settings > Apps > Farwatch > Permissions and enable Camera.',
+      MobileScannerErrorCode.unsupported =>
+        'Camera not available on this device.',
+      _ =>
+        'Camera error: ${error.errorDetails?.message ?? error.errorCode.name}',
+    };
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.no_photography, size: 64, color: Colors.grey[600]),
+            const SizedBox(height: 24),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        Expanded(
+          child: MobileScanner(
+            controller: _controller,
+            onDetect: _onDetect,
+            errorBuilder: (context, error) => _buildErrorView(error),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Point your camera at the QR code shown by\nfarwatch start',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[400], fontSize: 14),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Scan QR Code'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: MobileScanner(
-              controller: _controller,
-              onDetect: _onDetect,
-              errorBuilder: (context, error) {
-                final message = switch (error.errorCode) {
-                  MobileScannerErrorCode.permissionDenied =>
-                    'Camera permission denied.\n\nGo to Settings > Apps > Farwatch > Permissions and enable Camera.',
-                  MobileScannerErrorCode.unsupported =>
-                    'Camera not available on this device.',
-                  _ =>
-                    'Camera error: ${error.errorDetails?.message ?? error.errorCode.name}',
-                };
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.no_photography,
-                            size: 64, color: Colors.grey[600]),
-                        const SizedBox(height: 24),
-                        Text(
-                          message,
-                          textAlign: TextAlign.center,
-                          style:
-                              TextStyle(color: Colors.grey[400], fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Point your camera at the QR code shown by\nfarwatch start',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[400], fontSize: 14),
-            ),
-          ),
-        ],
+    return AdaptiveScaffold(
+      title: 'Scan QR Code',
+      body: SafeArea(
+        top: false,
+        child: _buildBody(),
       ),
     );
   }

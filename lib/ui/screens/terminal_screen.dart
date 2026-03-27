@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -12,6 +14,7 @@ import '../../core/pairing.dart';
 import '../../core/protocol.dart';
 import '../../core/session_history.dart';
 import '../../relay/session.dart';
+import '../adaptive.dart';
 
 class TerminalScreen extends StatefulWidget {
   final PairingUri pairing;
@@ -83,14 +86,14 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     _eventSub = _session.events.listen((msg) {
       switch (msg) {
         case SessionEnded(exitCode: final code):
-          _showSnackBar('Session ended (exit code: $code)');
+          _showToast('Session ended (exit code: $code)');
           SessionHistory.update(
             widget.pairing.sessionId,
             lastActiveAt: DateTime.now(),
             endReason: SessionEndReason.hostEnded,
           );
         case VersionNotice(minimumVersion: final v):
-          _showSnackBar('Minimum version required: $v');
+          _showToast('Minimum version required: $v');
 
         // ── Structured agent events ──
         case AgentSessionInit(model: final model, tools: final tools):
@@ -135,13 +138,7 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
           });
           _scrollAgentToBottom();
 
-        case AgentTextBlock(text: final text):
-          setState(() {
-            _agentMessages.add(_AgentMessage(type: _MsgType.text, text: text));
-          });
-          _scrollAgentToBottom();
-
-        case AgentToolUseStart(name: final name, id: final id, input: final input):
+        case AgentToolUseStart(id: final id, name: final name, input: final input):
           setState(() {
             _agentMessages.add(_AgentMessage(
               type: _MsgType.toolCall,
@@ -152,77 +149,65 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
           });
           _scrollAgentToBottom();
 
-        case AgentToolResult(id: final id, content: final content, isError: final isError):
+        case AgentToolResult(id: final id, content: final result, isError: final isError):
           setState(() {
             _agentMessages.add(_AgentMessage(
               type: isError ? _MsgType.toolError : _MsgType.toolResult,
-              text: content,
+              text: result,
               toolId: id,
             ));
           });
           _scrollAgentToBottom();
 
-        case AgentTurnCompleted(status: final status):
+        case AgentTurnCompleted():
+          setState(() => _agentBusy = false);
+          _scrollAgentToBottom();
+
+        case AgentSessionResult(result: final result, isError: final isError):
           setState(() {
             _agentBusy = false;
             _agentMessages.add(_AgentMessage(
-              type: _MsgType.turnMarker,
-              text: 'Turn $status',
+              type: isError ? _MsgType.toolError : _MsgType.text,
+              text: result,
             ));
           });
           _scrollAgentToBottom();
 
-        case AgentSessionResult(result: final result, durationMs: final ms, numTurns: final turns):
+        case AgentPermissionRequest(id: final id, tool: final name, title: final desc, metadata: final input):
           setState(() {
-            _agentMessages.add(_AgentMessage(
-              type: _MsgType.system,
-              text: 'Done (${(ms / 1000).toStringAsFixed(1)}s, $turns turn${turns == 1 ? "" : "s"})\n$result',
-            ));
-          });
-          _scrollAgentToBottom();
-
-        // ── Permission events ──
-        case AgentPermissionRequest(id: final id, tool: final tool, title: final title, metadata: final metadata):
-          setState(() {
-            _hasStructuredEvents = true;
-            _showStructuredView = true;
-            _pendingPermissions[id] = null; // null = pending
+            _pendingPermissions[id] = null;
             _agentMessages.add(_AgentMessage(
               type: _MsgType.permissionRequest,
-              text: title,
+              text: desc,
               toolId: id,
-              toolInput: metadata,
-              toolName: tool,
+              toolInput: input,
+              toolName: name,
             ));
           });
           _scrollAgentToBottom();
+          HapticFeedback.heavyImpact();
 
         case AgentPermissionResolved(id: final id, response: final response):
           setState(() {
             _pendingPermissions[id] = response;
           });
 
-        // ── Todo list ──
-        case AgentTodoUpdate(todos: final todos):
+        case AgentCostUpdate(costUsd: final cost, inputTokens: final input, outputTokens: final output):
           setState(() {
-            _hasStructuredEvents = true;
-            _showStructuredView = true;
-            _todos = todos;
+            _sessionCostUsd = cost;
+            _totalInputTokens = input;
+            _totalOutputTokens = output;
           });
 
-        // ── Cost tracking ──
-        case AgentCostUpdate(
-          inputTokens: final inp,
-          outputTokens: final out,
-          costUsd: final cost,
-        ):
+        case AgentTodoUpdate(todos: final items):
           setState(() {
-            _totalInputTokens += inp;
-            _totalOutputTokens += out;
-            _sessionCostUsd += cost;
+            _todos = items;
           });
 
-        default:
+        // Remaining SecureMessage subtypes are handled elsewhere or ignored.
+        case PtyInput() || PtyOutput() || Resize() || Heartbeat() ||
+             ClipboardMsg() || ReadOnlyMsg() || VoiceCommand() ||
+             AgentTextBlock() || AgentCommand() || UnknownMessage():
           break;
       }
     });
@@ -230,29 +215,20 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     _session.connect();
   }
 
-  // ---------------------------------------------------------------------------
-  // Speech-to-text
-  // ---------------------------------------------------------------------------
-
   Future<void> _initSpeech() async {
     _speechAvailable = await _speech.initialize(
+      onError: (error) {
+        log('[stt] error: ${error.errorMsg}');
+        if (mounted) setState(() => _isListening = false);
+      },
       onStatus: (status) {
         log('[stt] status: $status');
-        if (status == 'notListening' && _isListening) {
-          // Recognition stopped (e.g. silence timeout) — finalize
+        if (status == 'done' && mounted) {
           setState(() => _isListening = false);
           _onSpeechDone();
         }
       },
-      onError: (error) {
-        log('[stt] error: ${error.errorMsg}');
-        setState(() => _isListening = false);
-        if (_liveTranscript.isNotEmpty) {
-          _onSpeechDone();
-        }
-      },
     );
-    log('[stt] available: $_speechAvailable');
     if (mounted) setState(() {});
   }
 
@@ -331,11 +307,9 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     SessionHistory.upsert(record);
   }
 
-  void _showSnackBar(String text) {
+  void _showToast(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
+    showAdaptiveToast(context, text);
   }
 
   // ---------------------------------------------------------------------------
@@ -361,36 +335,24 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   }
 
   // ---------------------------------------------------------------------------
-  // Back button
+  // Back button / disconnect
   // ---------------------------------------------------------------------------
 
   Future<bool> _onBackPressed() async {
-    // If not connected, just go back
     if (_session.state == SessionState.disconnected ||
         _session.state == SessionState.error) {
       return true;
     }
 
-    // Prompt the user
-    final shouldDisconnect = await showDialog<bool>(
+    final shouldDisconnect = await showAdaptiveConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Disconnect?'),
-        content: const Text('This will end your terminal session.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Disconnect'),
-          ),
-        ],
-      ),
+      title: 'Disconnect?',
+      content: 'This will end your terminal session.',
+      confirmLabel: 'Disconnect',
+      isDestructive: true,
     );
 
-    if (shouldDisconnect == true) {
+    if (shouldDisconnect) {
       await _session.disconnect();
       SessionHistory.update(
         widget.pairing.sessionId,
@@ -401,10 +363,6 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     }
     return false;
   }
-
-  // ---------------------------------------------------------------------------
-  // Navigation
-  // ---------------------------------------------------------------------------
 
   @override
   void dispose() {
@@ -470,6 +428,42 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
     final showReconnect = _session.state == SessionState.error ||
         _session.state == SessionState.disconnected;
 
+    if (isApplePlatform) {
+      return GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        borderRadius: 0,
+        color: const Color(0x801C1C1E),
+        child: Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(color: color, fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (_session.toolName != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  _session.toolName!,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ),
+            if (showReconnect)
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                onPressed: () => _session.connect(),
+                child: Icon(CupertinoIcons.refresh, size: 16, color: Colors.grey[400]),
+              ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       color: Colors.grey[900],
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -507,6 +501,57 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   // ---------------------------------------------------------------------------
 
   void _showTerminalActions() {
+    if (isApplePlatform) {
+      _showCupertinoTerminalActions();
+    } else {
+      _showMaterialTerminalActions();
+    }
+  }
+
+  void _showCupertinoTerminalActions() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text('Terminal Actions'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _sendCtrl('C'); },
+            child: const Text('Interrupt (Ctrl+C)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _sendCtrl('D'); },
+            child: const Text('EOF (Ctrl+D)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _sendCtrl('Z'); },
+            child: const Text('Suspend (Ctrl+Z)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _sendCtrl('L'); },
+            child: const Text('Clear (Ctrl+L)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _sendCtrl('R'); },
+            child: const Text('Search (Ctrl+R)'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _sendBytes([0x1b]); },
+            child: const Text('Escape'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () { Navigator.pop(ctx); _pasteClipboard(); },
+            child: const Text('Paste Clipboard'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
+  void _showMaterialTerminalActions() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -605,14 +650,12 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
               Text(
                 label,
                 style: const TextStyle(color: Colors.white, fontSize: 12),
+                textAlign: TextAlign.center,
               ),
               if (shortcut.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    shortcut,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 10),
-                  ),
+                Text(
+                  shortcut,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 10),
                 ),
             ],
           ),
@@ -622,29 +665,16 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   }
 
   // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Compose bar (editable preview of transcribed speech)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Live listening overlay (shown while recording, terminal view only)
+  // Listening overlay
   // ---------------------------------------------------------------------------
 
   Widget _buildListeningOverlay() {
     return Positioned(
-      bottom: 80,
+      bottom: 80 + MediaQuery.of(context).padding.bottom,
       left: 24,
       right: 24,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[900]?.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
-        ),
+      child: GlassContainer(
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             const _PulsingDot(),
@@ -668,15 +698,84 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   }
 
   // ---------------------------------------------------------------------------
+  // Mic button
+  // ---------------------------------------------------------------------------
+
+  Widget _buildMicButton() {
+    if (isApplePlatform) {
+      return CupertinoButton(
+        padding: const EdgeInsets.all(14),
+        color: _isListening
+            ? CupertinoColors.destructiveRed
+            : const Color(0xCC3A3A3C),
+        borderRadius: BorderRadius.circular(28),
+        onPressed: () {
+          if (_isListening) {
+            _stopListening();
+          } else {
+            _startListening();
+          }
+        },
+        child: Icon(
+          _isListening ? CupertinoIcons.mic_fill : CupertinoIcons.mic,
+          color: _isListening ? CupertinoColors.white : Colors.grey[400],
+          size: 22,
+        ),
+      );
+    }
+    return FloatingActionButton(
+      backgroundColor: _isListening ? Colors.redAccent : Colors.grey[800],
+      onPressed: () {
+        if (_isListening) {
+          _stopListening();
+        } else {
+          _startListening();
+        }
+      },
+      tooltip: _isListening ? 'Tap to stop' : 'Tap to speak',
+      child: Icon(
+        _isListening ? Icons.mic : Icons.mic_none,
+        color: _isListening ? Colors.white : Colors.grey[400],
+        size: 24,
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
-    // Mic FAB only shows in terminal view (structured view has mic in prompt bar).
     final showMicFab = !_showStructuredView &&
         _speechAvailable &&
         _session.state == SessionState.connected;
+
+    final bodyContent = Stack(
+      children: [
+        Column(
+          children: [
+            _buildStatusBar(),
+            Expanded(
+              child: _showStructuredView
+                  ? _buildStructuredView()
+                  : TerminalView(
+                      _terminal,
+                      autofocus: true,
+                    ),
+            ),
+          ],
+        ),
+        if (_isListening && !_showStructuredView) _buildListeningOverlay(),
+        if (showMicFab)
+          Positioned(
+            right: 16,
+            bottom: (_showStructuredView ? 80 : 24) +
+                MediaQuery.of(context).padding.bottom,
+            child: _buildMicButton(),
+          ),
+      ],
+    );
 
     return PopScope(
       canPop: false,
@@ -687,88 +786,98 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
           navigator.pop();
         }
       },
-      child: Scaffold(
-        resizeToAvoidBottomInset: _showStructuredView,
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          title: const Text('Terminal'),
-          backgroundColor: Colors.grey[900],
-          foregroundColor: Colors.white,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _close,
-          ),
-          actions: [
+      child: isApplePlatform
+          ? _buildCupertinoShell(bodyContent)
+          : _buildMaterialShell(bodyContent),
+    );
+  }
+
+  Widget _buildMaterialShell(Widget body) {
+    return Scaffold(
+      resizeToAvoidBottomInset: _showStructuredView,
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text('Terminal'),
+        backgroundColor: Colors.grey[900],
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _close,
+        ),
+        actions: [
+          if (_session.state == SessionState.error ||
+              _session.state == SessionState.disconnected)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Reconnect',
+              onPressed: () => _session.connect(),
+            ),
+          if (_hasStructuredEvents)
+            IconButton(
+              icon: Icon(
+                _showStructuredView ? Icons.terminal : Icons.auto_awesome,
+              ),
+              tooltip: _showStructuredView ? 'Terminal view' : 'Structured view',
+              onPressed: () => setState(() => _showStructuredView = !_showStructuredView),
+            ),
+          if (!_showStructuredView)
+            IconButton(
+              icon: const Icon(Icons.keyboard_command_key),
+              tooltip: 'Terminal actions',
+              onPressed: _showTerminalActions,
+            ),
+        ],
+      ),
+      body: body,
+    );
+  }
+
+  Widget _buildCupertinoShell(Widget body) {
+    return CupertinoPageScaffold(
+      resizeToAvoidBottomInset: _showStructuredView,
+      backgroundColor: CupertinoColors.black,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: const Color(0xB01C1C1E),
+        middle: const Text('Terminal', style: TextStyle(color: CupertinoColors.white)),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          minimumSize: Size.zero,
+          onPressed: _close,
+          child: const Icon(CupertinoIcons.back, color: CupertinoColors.systemTeal, size: 22),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             if (_session.state == SessionState.error ||
                 _session.state == SessionState.disconnected)
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Reconnect',
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: Size.zero,
                 onPressed: () => _session.connect(),
+                child: const Icon(CupertinoIcons.refresh, color: CupertinoColors.white, size: 20),
               ),
-            // Toggle between structured and terminal views.
             if (_hasStructuredEvents)
-              IconButton(
-                icon: Icon(
-                  _showStructuredView ? Icons.terminal : Icons.auto_awesome,
-                ),
-                tooltip: _showStructuredView ? 'Terminal view' : 'Structured view',
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: Size.zero,
                 onPressed: () => setState(() => _showStructuredView = !_showStructuredView),
+                child: Icon(
+                  _showStructuredView ? Icons.terminal : CupertinoIcons.sparkles,
+                  color: CupertinoColors.white,
+                  size: 20,
+                ),
               ),
-            // Terminal actions (only in terminal view).
             if (!_showStructuredView)
-              IconButton(
-                icon: const Icon(Icons.keyboard_command_key),
-                tooltip: 'Terminal actions',
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                minimumSize: Size.zero,
                 onPressed: _showTerminalActions,
+                child: const Icon(CupertinoIcons.command, color: CupertinoColors.white, size: 20),
               ),
           ],
         ),
-        body: Stack(
-          children: [
-            // Main content — terminal or structured view
-            Column(
-              children: [
-                _buildStatusBar(),
-                Expanded(
-                  child: _showStructuredView
-                      ? _buildStructuredView()
-                      : TerminalView(
-                          _terminal,
-                          autofocus: true,
-                        ),
-                ),
-              ],
-            ),
-
-            // Live transcript overlay while listening
-            if (_isListening && !_showStructuredView) _buildListeningOverlay(),
-            // Floating mic button
-            if (showMicFab)
-              Positioned(
-                right: 16,
-                bottom: (_showStructuredView ? 80 : 24) +
-                    MediaQuery.of(context).padding.bottom,
-                child: FloatingActionButton(
-                  backgroundColor: _isListening ? Colors.redAccent : Colors.grey[800],
-                  onPressed: () {
-                    if (_isListening) {
-                      _stopListening();
-                    } else {
-                      _startListening();
-                    }
-                  },
-                  tooltip: _isListening ? 'Tap to stop' : 'Tap to speak',
-                  child: Icon(
-                    _isListening ? Icons.mic : Icons.mic_none,
-                    color: _isListening ? Colors.white : Colors.grey[400],
-                    size: 24,
-                  ),
-                ),
-              ),
-           ],
-        ),
       ),
+      child: SafeArea(top: false, child: body),
     );
   }
 
@@ -1131,19 +1240,11 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Container(
+      child: GlassContainer(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isPending
-              ? Colors.amber.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isPending
-                ? Colors.amber.withValues(alpha: 0.4)
-                : Colors.grey.withValues(alpha: 0.2),
-          ),
-        ),
+        color: isPending
+            ? Colors.amber.withValues(alpha: 0.1)
+            : Colors.grey.withValues(alpha: 0.08),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1202,51 +1303,88 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
             ],
             if (isPending) ...[
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 36,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          _session.sendDenyToolUse(permId);
-                          setState(() => _pendingPermissions[permId] = 'deny');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red[300],
-                          side: BorderSide(color: Colors.red.withValues(alpha: 0.4)),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: const Text('Deny', style: TextStyle(fontSize: 13)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 36,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          _session.sendApproveToolUse(permId);
-                          setState(() => _pendingPermissions[permId] = 'allow');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.withValues(alpha: 0.3),
-                          foregroundColor: Colors.green[200],
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: const Text('Allow', style: TextStyle(fontSize: 13)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _buildPermissionButtons(permId),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPermissionButtons(String permId) {
+    if (isApplePlatform) {
+      return Row(
+        children: [
+          Expanded(
+            child: CupertinoButton(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              color: Colors.red.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                _session.sendDenyToolUse(permId);
+                setState(() => _pendingPermissions[permId] = 'deny');
+              },
+              child: Text('Deny', style: TextStyle(color: Colors.red[300], fontSize: 13)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: CupertinoButton(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              color: Colors.green.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                _session.sendApproveToolUse(permId);
+                setState(() => _pendingPermissions[permId] = 'allow');
+              },
+              child: Text('Allow', style: TextStyle(color: Colors.green[200], fontSize: 13)),
+            ),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 36,
+            child: OutlinedButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                _session.sendDenyToolUse(permId);
+                setState(() => _pendingPermissions[permId] = 'deny');
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red[300],
+                side: BorderSide(color: Colors.red.withValues(alpha: 0.4)),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text('Deny', style: TextStyle(fontSize: 13)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SizedBox(
+            height: 36,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                _session.sendApproveToolUse(permId);
+                setState(() => _pendingPermissions[permId] = 'allow');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.withValues(alpha: 0.3),
+                foregroundColor: Colors.green[200],
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text('Allow', style: TextStyle(fontSize: 13)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1261,6 +1399,93 @@ class _TerminalScreenState extends State<TerminalScreen> with WidgetsBindingObse
   Widget _buildPromptBar() {
     final hasText = _promptController.text.trim().isNotEmpty;
 
+    if (isApplePlatform) return _buildCupertinoPromptBar(hasText);
+    return _buildMaterialPromptBar(hasText);
+  }
+
+  Widget _buildCupertinoPromptBar(bool hasText) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xCC1C1C1E),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                Expanded(
+                  child: CupertinoTextField(
+                    controller: _promptController,
+                    enabled: !_agentBusy,
+                    style: const TextStyle(color: CupertinoColors.white, fontSize: 14),
+                    placeholder: _isListening
+                        ? 'Listening...'
+                        : _agentBusy
+                            ? 'Agent is working...'
+                            : 'Send a prompt...',
+                    placeholderStyle: TextStyle(
+                      color: _isListening ? CupertinoColors.destructiveRed : Colors.grey[600],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2C2C2E),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendPrompt(),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: _agentBusy
+                      ? const Center(
+                          child: CupertinoActivityIndicator(),
+                        )
+                      : CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          color: hasText
+                              ? CupertinoColors.systemTeal
+                              : (_isListening
+                                  ? CupertinoColors.destructiveRed
+                                  : const Color(0xFF3A3A3C)),
+                          borderRadius: BorderRadius.circular(18),
+                          onPressed: () {
+                            if (hasText) {
+                              _sendPrompt();
+                            } else if (_isListening) {
+                              _stopListening();
+                            } else if (_speechAvailable) {
+                              _startListening();
+                            }
+                          },
+                          child: Icon(
+                            hasText
+                                ? CupertinoIcons.arrow_up
+                                : _isListening
+                                    ? CupertinoIcons.stop_fill
+                                    : CupertinoIcons.mic,
+                            color: CupertinoColors.white,
+                            size: 18,
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaterialPromptBar(bool hasText) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(

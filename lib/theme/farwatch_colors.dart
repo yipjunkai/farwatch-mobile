@@ -159,6 +159,51 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
   /// "Denied" badge background.
   final Color deniedBadge;
 
+  // ── Questions (mcp_question native UI) ─────────────────────────────────────
+
+  /// Question card background.
+  final Color questionSurface;
+
+  /// Question card border.
+  final Color questionBorder;
+
+  /// Question accent (header text, icons).
+  final Color questionAccent;
+
+  /// Primary action button (first option / Done).
+  final Color questionPrimaryButton;
+
+  /// Secondary action button (second option).
+  final Color questionSecondaryButton;
+
+  /// Option tile background.
+  final Color questionOptionSurface;
+
+  /// Option tile border.
+  final Color questionOptionBorder;
+
+  // ── User prompt (chat bubble) ──────────────────────────────────────────────
+
+  /// User message bubble background.
+  final Color userBubble;
+
+  /// User message bubble text.
+  final Color userBubbleText;
+
+  // ── Markdown / code ────────────────────────────────────────────────────────
+
+  /// Inline code background.
+  final Color codeInlineBackground;
+
+  /// Code block background.
+  final Color codeBlockBackground;
+
+  /// Code block border.
+  final Color codeBlockBorder;
+
+  /// Copy button foreground.
+  final Color copyButton;
+
   // ── Todos ──────────────────────────────────────────────────────────────────
 
   /// Todo section background.
@@ -272,6 +317,19 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
     required this.denyText,
     required this.allowedBadge,
     required this.deniedBadge,
+    required this.questionSurface,
+    required this.questionBorder,
+    required this.questionAccent,
+    required this.questionPrimaryButton,
+    required this.questionSecondaryButton,
+    required this.questionOptionSurface,
+    required this.questionOptionBorder,
+    required this.userBubble,
+    required this.userBubbleText,
+    required this.codeInlineBackground,
+    required this.codeBlockBackground,
+    required this.codeBlockBorder,
+    required this.copyButton,
     required this.todoSurface,
     required this.todoBorder,
     required this.todoHeader,
@@ -361,6 +419,25 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
         allowedBadge: Color(0x334CAF50),       // green @ ~20%
         deniedBadge: Color(0x33F44336),        // red @ ~20%
 
+        // Questions
+        questionSurface: Color(0x1A2196F3),    // blue @ ~10%
+        questionBorder: Color(0x4D2196F3),     // blue @ ~30%
+        questionAccent: Color(0xFF90CAF9),     // ~ Colors.blue[200]
+        questionPrimaryButton: Color(0x4D2196F3),  // blue @ ~30%
+        questionSecondaryButton: Color(0x332196F3), // blue @ ~20%
+        questionOptionSurface: Color(0x0DFFFFFF),   // white @ ~5%
+        questionOptionBorder: Color(0x1AFFFFFF),    // white @ ~10%
+
+        // User prompt bubble
+        userBubble: Color(0xFF0D47A1),         // ~ Colors.blue[900]
+        userBubbleText: Colors.white,
+
+        // Markdown / code
+        codeInlineBackground: Color(0x26808080), // grey @ ~15%
+        codeBlockBackground: Color(0xFF1A1A1A),
+        codeBlockBorder: Color(0xFF2C2C2E),
+        copyButton: Color(0xFF8E8E93),         // ~ Colors.grey[500]
+
         // Todos
         todoSurface: Color(0x1A607D8B),      // blueGrey @ ~10%
         todoBorder: Color(0x33607D8B),       // blueGrey @ ~20%
@@ -442,6 +519,19 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
     Color? denyText,
     Color? allowedBadge,
     Color? deniedBadge,
+    Color? questionSurface,
+    Color? questionBorder,
+    Color? questionAccent,
+    Color? questionPrimaryButton,
+    Color? questionSecondaryButton,
+    Color? questionOptionSurface,
+    Color? questionOptionBorder,
+    Color? userBubble,
+    Color? userBubbleText,
+    Color? codeInlineBackground,
+    Color? codeBlockBackground,
+    Color? codeBlockBorder,
+    Color? copyButton,
     Color? todoSurface,
     Color? todoBorder,
     Color? todoHeader,
@@ -508,6 +598,19 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       denyText: denyText ?? this.denyText,
       allowedBadge: allowedBadge ?? this.allowedBadge,
       deniedBadge: deniedBadge ?? this.deniedBadge,
+      questionSurface: questionSurface ?? this.questionSurface,
+      questionBorder: questionBorder ?? this.questionBorder,
+      questionAccent: questionAccent ?? this.questionAccent,
+      questionPrimaryButton: questionPrimaryButton ?? this.questionPrimaryButton,
+      questionSecondaryButton: questionSecondaryButton ?? this.questionSecondaryButton,
+      questionOptionSurface: questionOptionSurface ?? this.questionOptionSurface,
+      questionOptionBorder: questionOptionBorder ?? this.questionOptionBorder,
+      userBubble: userBubble ?? this.userBubble,
+      userBubbleText: userBubbleText ?? this.userBubbleText,
+      codeInlineBackground: codeInlineBackground ?? this.codeInlineBackground,
+      codeBlockBackground: codeBlockBackground ?? this.codeBlockBackground,
+      codeBlockBorder: codeBlockBorder ?? this.codeBlockBorder,
+      copyButton: copyButton ?? this.copyButton,
       todoSurface: todoSurface ?? this.todoSurface,
       todoBorder: todoBorder ?? this.todoBorder,
       todoHeader: todoHeader ?? this.todoHeader,
@@ -579,6 +682,19 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       denyText: Color.lerp(denyText, other.denyText, t)!,
       allowedBadge: Color.lerp(allowedBadge, other.allowedBadge, t)!,
       deniedBadge: Color.lerp(deniedBadge, other.deniedBadge, t)!,
+      questionSurface: Color.lerp(questionSurface, other.questionSurface, t)!,
+      questionBorder: Color.lerp(questionBorder, other.questionBorder, t)!,
+      questionAccent: Color.lerp(questionAccent, other.questionAccent, t)!,
+      questionPrimaryButton: Color.lerp(questionPrimaryButton, other.questionPrimaryButton, t)!,
+      questionSecondaryButton: Color.lerp(questionSecondaryButton, other.questionSecondaryButton, t)!,
+      questionOptionSurface: Color.lerp(questionOptionSurface, other.questionOptionSurface, t)!,
+      questionOptionBorder: Color.lerp(questionOptionBorder, other.questionOptionBorder, t)!,
+      userBubble: Color.lerp(userBubble, other.userBubble, t)!,
+      userBubbleText: Color.lerp(userBubbleText, other.userBubbleText, t)!,
+      codeInlineBackground: Color.lerp(codeInlineBackground, other.codeInlineBackground, t)!,
+      codeBlockBackground: Color.lerp(codeBlockBackground, other.codeBlockBackground, t)!,
+      codeBlockBorder: Color.lerp(codeBlockBorder, other.codeBlockBorder, t)!,
+      copyButton: Color.lerp(copyButton, other.copyButton, t)!,
       todoSurface: Color.lerp(todoSurface, other.todoSurface, t)!,
       todoBorder: Color.lerp(todoBorder, other.todoBorder, t)!,
       todoHeader: Color.lerp(todoHeader, other.todoHeader, t)!,

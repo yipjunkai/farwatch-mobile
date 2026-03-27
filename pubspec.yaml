@@ -41,6 +41,9 @@ dependencies:
   # Time formatting
   timeago: ^3.7.0
 
+  # Markdown rendering
+  flutter_markdown: ^0.7.6
+  
   # UI
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1

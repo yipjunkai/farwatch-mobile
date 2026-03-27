@@ -34,6 +34,8 @@ class _PromptBarState extends ConsumerState<PromptBar> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     HapticFeedback.lightImpact();
+    // Echo the user's prompt as a chat bubble before sending.
+    ref.read(agentStateProvider.notifier).addUserPrompt(text);
     ref.read(terminalSessionProvider(widget.pairing).notifier).sendAgentPrompt(text);
     _controller.clear();
   }

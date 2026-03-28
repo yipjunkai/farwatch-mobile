@@ -164,47 +164,20 @@ class _ScrollToBottomButton extends StatelessWidget {
 // Busy banner — thin animated bar while agent is working
 // ---------------------------------------------------------------------------
 
-class _AgentBusyBanner extends StatefulWidget {
+class _AgentBusyBanner extends StatelessWidget {
   final FarwatchColors colors;
   const _AgentBusyBanner({required this.colors});
 
   @override
-  State<_AgentBusyBanner> createState() => _AgentBusyBannerState();
-}
-
-class _AgentBusyBannerState extends State<_AgentBusyBanner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // LinearProgressIndicator with value: null is already self-animating.
     return SizedBox(
       height: 2,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return LinearProgressIndicator(
-            value: null,
-            backgroundColor: widget.colors.surfaceSecondary,
-            color: widget.colors.accent,
-            minHeight: 2,
-          );
-        },
+      child: LinearProgressIndicator(
+        value: null,
+        backgroundColor: colors.surfaceSecondary,
+        color: colors.accent,
+        minHeight: 2,
       ),
     );
   }

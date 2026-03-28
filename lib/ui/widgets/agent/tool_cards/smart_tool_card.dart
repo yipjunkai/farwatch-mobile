@@ -348,8 +348,8 @@ class _ExpandableResultState extends State<_ExpandableResult> {
                         fontSize: 11,
                         fontFamily: 'monospace',
                       ),
-                      maxLines: _expanded ? null : widget.collapsedMaxLines,
-                      overflow: _expanded ? null : TextOverflow.ellipsis,
+                      maxLines: _expanded ? 10000 : widget.collapsedMaxLines,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -656,7 +656,22 @@ class _WriteCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            SmartToolCard._filePathHeader(input.filePath, 'Write', colors),
+            Icon(Icons.insert_drive_file_outlined,
+                size: 14, color: colors.toolCallAccent),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                input.filePath ?? 'unknown',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'monospace',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

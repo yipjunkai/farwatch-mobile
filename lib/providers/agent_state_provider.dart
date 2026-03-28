@@ -1,10 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/protocol.dart';
 import '../models/agent_message.dart';
+
+/// Haptic feedback pattern for different event types.
+enum EventHaptic { none, light, medium, heavy, success }
 
 /// Immutable snapshot of the structured agent view state.
 @immutable
@@ -187,6 +191,9 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
           text: name,
           toolId: id,
           toolInput: input,
+          toolName: name,
+          toolRunning: true,
+          toolStartedAt: DateTime.now(),
         ));
         state = state.copyWith(messages: messages, agentTyping: false);
         return null;
@@ -196,12 +203,23 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
           content: final result,
           isError: final isError):
         final messages = List<AgentMessage>.of(state.messages);
-        messages.add(AgentMessage(
-          id: _nextId++,
-          type: isError ? AgentMessageType.toolError : AgentMessageType.toolResult,
-          text: result,
-          toolId: id,
-        ));
+        // Find the matching toolCall message and attach the result inline.
+        final matchIdx = messages.lastIndexWhere(
+          (m) => m.type == AgentMessageType.toolCall && m.toolId == id,
+        );
+        if (matchIdx != -1) {
+          messages[matchIdx].toolRunning = false;
+          messages[matchIdx].toolResult = result;
+          messages[matchIdx].toolIsError = isError;
+        } else {
+          // No matching tool call found — append as a standalone result.
+          messages.add(AgentMessage(
+            id: _nextId++,
+            type: isError ? AgentMessageType.toolError : AgentMessageType.toolResult,
+            text: result,
+            toolId: id,
+          ));
+        }
         state = state.copyWith(messages: messages);
         return null;
 
@@ -323,5 +341,43 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
     final questions = Map<String, List<String>?>.of(state.pendingQuestions);
     questions[toolId] = selectedLabels;
     state = state.copyWith(pendingQuestions: questions);
+  }
+
+  /// Returns the appropriate haptic feedback for an event type.
+  /// Call this after [handleEvent] to trigger platform haptics.
+  static EventHaptic hapticFor(SecureMessage msg) {
+    return switch (msg) {
+      AgentTurnStarted() => EventHaptic.light,
+      AgentTextDelta() => EventHaptic.none,
+      AgentThinkingDelta() => EventHaptic.none,
+      AgentToolUseStart() => EventHaptic.medium,
+      AgentToolResult(isError: true) => EventHaptic.heavy,
+      AgentToolResult() => EventHaptic.light,
+      AgentTurnCompleted() => EventHaptic.success,
+      AgentPermissionRequest() => EventHaptic.heavy,
+      AgentSessionResult() => EventHaptic.success,
+      SessionEnded() => EventHaptic.heavy,
+      _ => EventHaptic.none,
+    };
+  }
+
+  /// Triggers the appropriate platform haptic for the given event.
+  static void triggerHaptic(SecureMessage msg) {
+    switch (hapticFor(msg)) {
+      case EventHaptic.none:
+        break;
+      case EventHaptic.light:
+        HapticFeedback.lightImpact();
+        break;
+      case EventHaptic.medium:
+        HapticFeedback.mediumImpact();
+        break;
+      case EventHaptic.heavy:
+        HapticFeedback.heavyImpact();
+        break;
+      case EventHaptic.success:
+        HapticFeedback.mediumImpact();
+        break;
+    }
   }
 }

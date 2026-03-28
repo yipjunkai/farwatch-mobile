@@ -7,6 +7,7 @@ import '../../../theme/farwatch_colors.dart';
 import 'permission_card.dart';
 import 'question_card.dart';
 import 'markdown_text.dart';
+import 'tool_cards/smart_tool_card.dart';
 
 /// Renders a single [AgentMessage] as the appropriate card type.
 ///
@@ -15,6 +16,8 @@ import 'markdown_text.dart';
 ///  - Agent text → left-aligned with markdown rendering
 ///  - Tool cards, permissions, questions → full-width centered cards
 ///  - Turn markers → subtle timestamp dividers
+///
+/// Long-press on any copyable card shows a context menu with Copy action.
 class AgentMessageCard extends StatelessWidget {
   final AgentMessage message;
   final PairingUri pairing;
@@ -25,16 +28,32 @@ class AgentMessageCard extends StatelessWidget {
     required this.pairing,
   });
 
+  /// Whether this message type has text worth copying.
+  bool get _isCopyable => switch (message.type) {
+        AgentMessageType.text ||
+        AgentMessageType.userPrompt ||
+        AgentMessageType.thinking ||
+        AgentMessageType.toolResult ||
+        AgentMessageType.toolError ||
+        AgentMessageType.system => true,
+        _ => false,
+      };
+
+  /// The text to copy for this message.
+  String get _copyText => switch (message.type) {
+        AgentMessageType.toolCall => message.toolResult ?? message.toolInput ?? message.text,
+        _ => message.text,
+      };
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return switch (message.type) {
+    final child = switch (message.type) {
       AgentMessageType.system => _SystemCard(text: message.text, colors: c),
       AgentMessageType.userPrompt => _UserBubble(text: message.text, colors: c),
       AgentMessageType.text => _TextCard(text: message.text, colors: c),
       AgentMessageType.thinking => _ThinkingCard(text: message.text, colors: c),
-      AgentMessageType.toolCall => _ToolCallCard(
-          name: message.text, input: message.toolInput, colors: c),
+      AgentMessageType.toolCall => SmartToolCard(message: message),
       AgentMessageType.toolResult => _ResultCard(text: message.text, colors: c),
       AgentMessageType.toolError => _ErrorCard(text: message.text, colors: c),
       AgentMessageType.turnMarker => _TurnMarker(text: message.text, colors: c),
@@ -43,6 +62,75 @@ class AgentMessageCard extends StatelessWidget {
       AgentMessageType.questionRequest =>
         QuestionCard(message: message, pairing: pairing),
     };
+
+    if (!_isCopyable && message.type != AgentMessageType.toolCall) {
+      return child;
+    }
+
+    return GestureDetector(
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        _showCopyMenu(context, c);
+      },
+      child: child,
+    );
+  }
+
+  void _showCopyMenu(BuildContext context, FarwatchColors c) {
+    final overlay = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => Stack(
+        children: [
+          // Dismiss scrim
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => entry.remove(),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+          // Menu positioned above the card
+          Positioned(
+            left: position.dx + size.width / 2 - 50,
+            top: (position.dy - 44).clamp(48.0, double.infinity),
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(8),
+              color: c.surfaceSecondary,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: _copyText));
+                  HapticFeedback.lightImpact();
+                  entry.remove();
+                },
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.copy, size: 16, color: c.textSecondary),
+                      const SizedBox(width: 6),
+                      Text('Copy',
+                          style: TextStyle(
+                              color: c.textPrimary, fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    overlay.insert(entry);
   }
 }
 
@@ -183,55 +271,7 @@ class _ThinkingCard extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Tool call card
-// ---------------------------------------------------------------------------
-
-class _ToolCallCard extends StatelessWidget {
-  final String name;
-  final String? input;
-  final FarwatchColors colors;
-  const _ToolCallCard(
-      {required this.name, this.input, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: colors.toolCallSurface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colors.toolCallBorder),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.build, color: colors.toolCallAccent, size: 16),
-            const SizedBox(width: 6),
-            Text(name,
-                style: TextStyle(
-                    color: colors.toolCallAccent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
-          ]),
-          if (input != null && input!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              input!.length > 200 ? '${input!.substring(0, 200)}...' : input!,
-              style: TextStyle(
-                  color: colors.textTertiary,
-                  fontSize: 11,
-                  fontFamily: 'monospace'),
-            ),
-          ],
-        ]),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Result card — expandable with copy button (Phase 3)
+// Result card — standalone fallback for orphaned results (Phase 3)
 // ---------------------------------------------------------------------------
 
 class _ResultCard extends StatefulWidget {

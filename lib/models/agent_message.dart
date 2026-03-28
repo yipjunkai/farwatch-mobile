@@ -79,6 +79,9 @@ class QuestionData {
 ///
 /// Mutable `text` field allows streaming deltas to append in place
 /// (text and thinking messages grow incrementally).
+///
+/// For tool calls, `toolResult` / `toolIsError` / `toolRunning` track the
+/// lifecycle so the card can show a loading shimmer, then the result inline.
 class AgentMessage {
   final int id;
   final AgentMessageType type;
@@ -90,6 +93,18 @@ class AgentMessage {
   /// Parsed question data (only for [AgentMessageType.questionRequest]).
   final QuestionData? questionData;
 
+  /// Whether this tool call is still running (no result yet).
+  bool toolRunning;
+
+  /// The tool's output content (populated when [AgentToolResult] arrives).
+  String? toolResult;
+
+  /// Whether the tool result was an error.
+  bool toolIsError;
+
+  /// Timestamp when the tool call started (for elapsed time display).
+  final DateTime? toolStartedAt;
+
   AgentMessage({
     required this.id,
     required this.type,
@@ -98,5 +113,9 @@ class AgentMessage {
     this.toolInput,
     this.toolName,
     this.questionData,
+    this.toolRunning = false,
+    this.toolResult,
+    this.toolIsError = false,
+    this.toolStartedAt,
   });
 }

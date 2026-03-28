@@ -159,6 +159,9 @@ class TerminalSessionNotifier
   void _onEvent(SecureMessage msg) {
     final toast = ref.read(agentStateProvider.notifier).handleEvent(msg);
 
+    // Trigger event-appropriate haptic feedback.
+    AgentStateNotifier.triggerHaptic(msg);
+
     // Handle session-ending events for history persistence.
     if (msg is SessionEnded) {
       _updateHistory(SessionEndReason.hostEnded);

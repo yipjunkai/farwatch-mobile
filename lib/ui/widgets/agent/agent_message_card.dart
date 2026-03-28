@@ -209,7 +209,7 @@ class _UserBubble extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Agent text — left-aligned with markdown rendering (Phase 3)
+// Agent text — left-aligned bubble with markdown rendering (Phase 3)
 // ---------------------------------------------------------------------------
 
 class _TextCard extends StatelessWidget {
@@ -222,10 +222,23 @@ class _TextCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Flexible(
-            child: MarkdownText(text: text),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: colors.surfaceSecondary,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: MarkdownText(text: text),
+            ),
           ),
           const SizedBox(width: 48), // right gutter
         ],
@@ -320,8 +333,8 @@ class _ResultCardState extends State<_ResultCard> {
                       fontSize: 11,
                       fontFamily: 'monospace',
                     ),
-                    maxLines: _expanded ? null : _collapsedMaxLines,
-                    overflow: _expanded ? null : TextOverflow.ellipsis,
+                    maxLines: _expanded ? 10000 : _collapsedMaxLines,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 4),

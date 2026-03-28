@@ -667,8 +667,14 @@ SecureMessage decodeSecureMessage(Uint8List bytes) {
       'AgentCommand'   => _decodeAgentCommand(value),
       _                => UnknownMessage(bytes),
     };
-  } catch (_) {
+  } catch (e) {
     // Forward compatibility: unrecognized data becomes Unknown.
+    // In debug builds, surface the error as visible text.
+    assert(() {
+      // ignore: avoid_print
+      print('[protocol] decodeSecureMessage error: $e');
+      return true;
+    }());
     return UnknownMessage(bytes);
   }
 }
@@ -682,71 +688,87 @@ AgentEvent _decodeAgentEvent(dynamic raw) {
   if (raw is String) {
     return switch (raw) {
       'TurnStarted' => AgentTurnStarted(),
-      _ => AgentTurnStarted(), // forward compat
+      _ => _unknownAgentEvent('unit:$raw'),
     };
   }
 
-  if (raw is! Map) return AgentTurnStarted();
+  if (raw is! Map) return _unknownAgentEvent('notMap:${raw.runtimeType}');
 
   final entry = raw.entries.first;
   final key = entry.key as String;
   final value = entry.value;
 
-  return switch (key) {
-    'SessionInit' => AgentSessionInit(
-      sessionId: (value as Map)['session_id'] as String,
-      model: value['model'] as String,
-      tools: (value['tools'] as List).cast<String>(),
-    ),
-    'TurnStarted' => AgentTurnStarted(),
-    'TextDelta' => AgentTextDelta(text: (value as Map)['text'] as String),
-    'ThinkingDelta' => AgentThinkingDelta(text: (value as Map)['text'] as String),
-    'TextBlock' => AgentTextBlock(text: (value as Map)['text'] as String),
-    'ToolUseStart' => AgentToolUseStart(
-      id: (value as Map)['id'] as String,
-      name: value['name'] as String,
-      input: value['input'] as String,
-    ),
-    'ToolResult' => AgentToolResult(
-      id: (value as Map)['id'] as String,
-      content: value['content'] as String,
-      isError: value['is_error'] as bool,
-    ),
-    'TurnCompleted' => AgentTurnCompleted(status: (value as Map)['status'] as String),
-    'SessionResult' => AgentSessionResult(
-      result: (value as Map)['result'] as String,
-      isError: value['is_error'] as bool,
-      durationMs: value['duration_ms'] as int,
-      numTurns: value['num_turns'] as int,
-    ),
-    'PermissionRequest' => AgentPermissionRequest(
-      id: (value as Map)['id'] as String,
-      tool: value['tool'] as String,
-      title: value['title'] as String,
-      metadata: value['metadata'] as String,
-    ),
-    'PermissionResolved' => AgentPermissionResolved(
-      id: (value as Map)['id'] as String,
-      response: value['response'] as String,
-    ),
-    'TodoUpdate' => AgentTodoUpdate(
-      todos: ((value as Map)['todos'] as List).map((t) => TodoItem(
-        id: (t as Map)['id'] as String? ?? '',
-        content: t['content'] as String? ?? '',
-        status: t['status'] as String? ?? 'pending',
-        priority: t['priority'] as String? ?? 'medium',
-      )).toList(),
-    ),
-    'CostUpdate' => AgentCostUpdate(
-      inputTokens: (value as Map)['input_tokens'] as int,
-      outputTokens: value['output_tokens'] as int,
-      reasoningTokens: value['reasoning_tokens'] as int,
-      cacheReadTokens: value['cache_read_tokens'] as int,
-      cacheWriteTokens: value['cache_write_tokens'] as int,
-      costUsd: (value['cost_usd'] as num).toDouble(),
-    ),
-    _ => AgentTurnStarted(), // forward compat
-  };
+  try {
+    return switch (key) {
+      'SessionInit' => AgentSessionInit(
+        sessionId: (value as Map)['session_id'] as String,
+        model: value['model'] as String,
+        tools: (value['tools'] as List).cast<String>(),
+      ),
+      'TurnStarted' => AgentTurnStarted(),
+      'TextDelta' => AgentTextDelta(text: (value as Map)['text'] as String),
+      'ThinkingDelta' => AgentThinkingDelta(text: (value as Map)['text'] as String),
+      'TextBlock' => AgentTextBlock(text: (value as Map)['text'] as String),
+      'ToolUseStart' => AgentToolUseStart(
+        id: (value as Map)['id'] as String,
+        name: value['name'] as String,
+        input: value['input'] as String,
+      ),
+      'ToolResult' => AgentToolResult(
+        id: (value as Map)['id'] as String,
+        content: value['content'] as String,
+        isError: value['is_error'] as bool,
+      ),
+      'TurnCompleted' => AgentTurnCompleted(
+        status: (value as Map)['status']?.toString() ?? 'completed',
+      ),
+      'SessionResult' => AgentSessionResult(
+        result: (value as Map)['result'] as String,
+        isError: value['is_error'] as bool,
+        durationMs: (value['duration_ms'] as num).toInt(),
+        numTurns: (value['num_turns'] as num).toInt(),
+      ),
+      'PermissionRequest' => AgentPermissionRequest(
+        id: (value as Map)['id'] as String,
+        tool: value['tool'] as String,
+        title: value['title'] as String,
+        metadata: value['metadata'] as String,
+      ),
+      'PermissionResolved' => AgentPermissionResolved(
+        id: (value as Map)['id'] as String,
+        response: value['response'] as String,
+      ),
+      'TodoUpdate' => AgentTodoUpdate(
+        todos: ((value as Map)['todos'] as List).map((t) => TodoItem(
+          id: (t as Map)['id']?.toString() ?? '',
+          content: t['content']?.toString() ?? '',
+          status: t['status']?.toString() ?? 'pending',
+          priority: t['priority']?.toString() ?? 'medium',
+        )).toList(),
+      ),
+      'CostUpdate' => AgentCostUpdate(
+        inputTokens: ((value as Map)['input_tokens'] as num).toInt(),
+        outputTokens: (value['output_tokens'] as num).toInt(),
+        reasoningTokens: (value['reasoning_tokens'] as num?)?.toInt() ?? 0,
+        cacheReadTokens: (value['cache_read_tokens'] as num?)?.toInt() ?? 0,
+        cacheWriteTokens: (value['cache_write_tokens'] as num?)?.toInt() ?? 0,
+        costUsd: (value['cost_usd'] as num).toDouble(),
+      ),
+      _ => _unknownAgentEvent('variant:$key'),
+    };
+  } catch (e) {
+    // Decode error — surface it as a visible system message rather than
+    // silently turning it into a TurnStarted marker.
+    return _unknownAgentEvent('$key:$e');
+  }
+}
+
+/// Creates a visible debug marker for unknown/failed agent events.
+/// Shows as a system message so decode failures are visible during development.
+AgentEvent _unknownAgentEvent(String info) {
+  // Return a TextDelta with debug info so it's visible in the chat.
+  // In production, this could be changed to silently drop.
+  return AgentTextDelta(text: '[Unknown event: $info]');
 }
 
 AgentCommand _decodeAgentCommand(dynamic raw) {

@@ -83,6 +83,10 @@ final agentStateProvider =
 class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
   int _nextId = 0;
 
+  /// Tracks model strings we've already shown SessionInit for,
+  /// to avoid duplicate "Model: ..." cards from repeated message.updated events.
+  final Set<String> _seenModels = {};
+
   @override
   AgentState build() => const AgentState();
 
@@ -122,6 +126,19 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         return 'Minimum version required: $v';
 
       case AgentSessionInit(model: final model, tools: final tools):
+        // Deduplicate: OpenCode sends message.updated → SessionInit for every
+        // assistant message. Only show the card once per unique model.
+        final modelKey = '$model|${tools.join(",")}';
+        if (_seenModels.contains(modelKey)) {
+          // Still enable structured view, just skip the duplicate card.
+          state = state.copyWith(
+            hasStructuredEvents: true,
+            showStructuredView: true,
+          );
+          return null;
+        }
+        _seenModels.add(modelKey);
+
         final messages = List<AgentMessage>.of(state.messages);
         messages.add(AgentMessage(
           id: _nextId++,
@@ -154,6 +171,25 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         if (messages.isNotEmpty &&
             messages.last.type == AgentMessageType.text) {
           messages.last.text += text;
+        } else {
+          messages.add(AgentMessage(
+            id: _nextId++,
+            type: AgentMessageType.text,
+            text: text,
+          ));
+        }
+        state = state.copyWith(messages: messages, agentTyping: false);
+        return null;
+
+      case AgentTextBlock(text: final text):
+        // Complete text block (non-streaming) — treat like TextDelta
+        // but replace rather than append if a text message already exists
+        // for this turn.
+        final messages = List<AgentMessage>.of(state.messages);
+        if (messages.isNotEmpty &&
+            messages.last.type == AgentMessageType.text) {
+          // Replace: TextBlock is the full content, not a delta.
+          messages.last.text = text;
         } else {
           messages.add(AgentMessage(
             id: _nextId++,

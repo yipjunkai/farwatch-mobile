@@ -86,6 +86,8 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
     return Column(
       children: [
         const CostTicker(),
+        // Sticky busy banner
+        if (agent.agentBusy) _AgentBusyBanner(colors: c),
         const AgentTodoList(),
         Expanded(
           child: Stack(
@@ -154,6 +156,56 @@ class _ScrollToBottomButton extends StatelessWidget {
       foregroundColor: colors.textSecondary,
       elevation: 2,
       child: const Icon(Icons.keyboard_arrow_down, size: 22),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Busy banner — thin animated bar while agent is working
+// ---------------------------------------------------------------------------
+
+class _AgentBusyBanner extends StatefulWidget {
+  final FarwatchColors colors;
+  const _AgentBusyBanner({required this.colors});
+
+  @override
+  State<_AgentBusyBanner> createState() => _AgentBusyBannerState();
+}
+
+class _AgentBusyBannerState extends State<_AgentBusyBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 2,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return LinearProgressIndicator(
+            value: null,
+            backgroundColor: widget.colors.surfaceSecondary,
+            color: widget.colors.accent,
+            minHeight: 2,
+          );
+        },
+      ),
     );
   }
 }

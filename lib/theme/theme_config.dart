@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 
 import 'farwatch_colors.dart';
 
-/// Build the Material [ThemeData] for Android, with [FarwatchColors] attached
-/// as a theme extension.
+/// Build the Material [ThemeData] with [FarwatchColors] attached as a theme
+/// extension.
 ThemeData buildMaterialTheme({FarwatchColors? colors}) {
   final c = colors ?? FarwatchColors.dark();
+  final isDark = c.background.computeLuminance() < 0.5;
   return ThemeData(
-    brightness: Brightness.dark,
+    brightness: isDark ? Brightness.dark : Brightness.light,
     colorSchemeSeed: c.accent,
     useMaterial3: true,
     scaffoldBackgroundColor: c.background,
@@ -16,20 +17,17 @@ ThemeData buildMaterialTheme({FarwatchColors? colors}) {
   );
 }
 
-/// Build the [CupertinoThemeData] for iOS, matching the dark palette.
-///
-/// Note: [CupertinoThemeData] does not support theme extensions natively.
-/// Widgets access [FarwatchColors] via the Material [Theme] ancestor that
-/// wraps the [CupertinoApp] (Flutter automatically creates one).
+/// Build the [CupertinoThemeData] for iOS.
 CupertinoThemeData buildCupertinoTheme({FarwatchColors? colors}) {
   final c = colors ?? FarwatchColors.dark();
+  final isDark = c.background.computeLuminance() < 0.5;
   return CupertinoThemeData(
-    brightness: Brightness.dark,
-    primaryColor: CupertinoColors.systemTeal,
-    scaffoldBackgroundColor: CupertinoColors.black,
+    brightness: isDark ? Brightness.dark : Brightness.light,
+    primaryColor: c.accent,
+    scaffoldBackgroundColor: c.background,
     barBackgroundColor: c.navBarBackground,
-    textTheme: const CupertinoTextThemeData(
-      primaryColor: CupertinoColors.white,
+    textTheme: CupertinoTextThemeData(
+      primaryColor: isDark ? CupertinoColors.white : CupertinoColors.black,
     ),
   );
 }

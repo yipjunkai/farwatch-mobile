@@ -31,6 +31,11 @@ void _showCupertinoEntry(BuildContext context,
           autofocus: true,
           maxLines: 3,
           style: const TextStyle(fontSize: 13),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF3A3A3C)),
+          ),
         ),
       ),
       actions: [

@@ -350,8 +350,89 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
     required this.sessionLost,
   });
 
-  /// The default dark theme — maps every token to the hard-coded values
-  /// currently scattered across the codebase.
+  /// The light theme — warm rose accent on iOS-standard light surfaces.
+  factory FarwatchColors.light() => const FarwatchColors(
+        // Surfaces
+        background: Color(0xFFF2F2F7),
+        navBarBackground: Color(0xE6F9F9F9),
+        surfacePrimary: Colors.white,
+        surfaceSecondary: Color(0xFFE5E5EA),
+        surfaceTertiary: Color(0xFFD1D1D6),
+        glassSurface: Color(0xCCF9F9F9),
+        glassBorder: Color(0x1A000000),
+        statusBarSurface: Color(0x80F9F9F9),
+        inputBackground: Color(0xFFE5E5EA),
+        textPrimary: Colors.black,
+        textSecondary: Color(0xFF636366),
+        textTertiary: Color(0xFF8E8E93),
+        textPlaceholder: Color(0xFFAEAEB2),
+        textMuted: Color(0xFF8E8E93),
+        accent: Color(0xFFD4736A),
+        statusConnected: Color(0xFF34C759),
+        statusConnecting: Color(0xFFFF9500),
+        statusWarning: Color(0xFFFFCC00),
+        statusError: Color(0xFFFF3B30),
+        statusErrorAccent: Color(0xFFFF3B30),
+        statusNeutral: Color(0xFF8E8E93),
+        toolCallSurface: Color(0x1AD4736A),
+        toolCallBorder: Color(0x33D4736A),
+        toolCallAccent: Color(0xFFB85C54),
+        thinkingSurface: Color(0x1A9C27B0),
+        thinkingBorder: Color(0x339C27B0),
+        thinkingAccent: Color(0xFF7B1FA2),
+        thinkingIcon: Color(0xFF9C27B0),
+        errorSurface: Color(0x1AFF3B30),
+        errorBorder: Color(0x33FF3B30),
+        systemSurface: Color(0x14607D8B),
+        resultSurface: Color(0x0A000000),
+        infoSurface: Color(0x1AFFCC00),
+        infoBorder: Color(0x33FFCC00),
+        infoAccent: Color(0xFFB38F00),
+        permissionPendingSurface: Color(0x1AFFCC00),
+        permissionPendingBorder: Color(0x4DFFCC00),
+        permissionPendingAccent: Color(0xFFB38F00),
+        permissionResolvedSurface: Color(0x0A000000),
+        permissionResolvedBorder: Color(0x1A000000),
+        approveBackground: Color(0x3334C759),
+        approveText: Color(0xFF248A3D),
+        denyBackground: Color(0x33FF3B30),
+        denyText: Color(0xFFD70015),
+        allowedBadge: Color(0x3334C759),
+        deniedBadge: Color(0x33FF3B30),
+        questionSurface: Color(0x1AD4736A),
+        questionBorder: Color(0x33D4736A),
+        questionAccent: Color(0xFFB85C54),
+        questionPrimaryButton: Color(0x33D4736A),
+        questionSecondaryButton: Color(0x1AD4736A),
+        questionOptionSurface: Color(0x08000000),
+        questionOptionBorder: Color(0x14000000),
+        userBubble: Color(0xFFD4736A),
+        userBubbleText: Colors.white,
+        codeInlineBackground: Color(0x14000000),
+        codeBlockBackground: Color(0xFFF2F2F7),
+        codeBlockBorder: Color(0xFFD1D1D6),
+        copyButton: Color(0xFF8E8E93),
+        todoSurface: Color(0x14607D8B),
+        todoBorder: Color(0x26607D8B),
+        todoHeader: Color(0xFF546E7A),
+        todoCompleted: Color(0xFF34C759),
+        todoInProgress: Color(0xFFD4736A),
+        todoPending: Color(0xFF8E8E93),
+        todoHighPriority: Color(0xFFFF3B30),
+        costSurface: Color(0x0A000000),
+        costDivider: Color(0x14000000),
+        costIcon: Color(0xFF8E8E93),
+        micActive: Color(0xFFFF3B30),
+        micIdle: Color(0xFFE5E5EA),
+        sendActive: Color(0xFFD4736A),
+        promptBarBorder: Color(0xFFD1D1D6),
+        destructive: Color(0xFFFF3B30),
+        destructiveOnSurface: Colors.white,
+        sessionHostEnded: Color(0xFFFF9500),
+        sessionLost: Color(0xFFFF3B30),
+      );
+
+  /// The default dark theme.
   factory FarwatchColors.dark() => const FarwatchColors(
         // Surfaces
         background: Colors.black,
@@ -371,8 +452,8 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
         textPlaceholder: Color(0xFF757575),  // ~ Colors.grey[600]
         textMuted: Color(0xFF8E8E93),        // ~ Colors.grey[500]
 
-        // Accent
-        accent: Colors.teal,
+        // Accent — warm rose/coral
+        accent: Color(0xFFE8758A),
 
         // Status
         statusConnected: Colors.green,
@@ -428,8 +509,8 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
         questionOptionSurface: Color(0x0DFFFFFF),   // white @ ~5%
         questionOptionBorder: Color(0x1AFFFFFF),    // white @ ~10%
 
-        // User prompt bubble
-        userBubble: Color(0xFF0D47A1),         // ~ Colors.blue[900]
+        // User prompt bubble — warm rose
+        userBubble: Color(0xFFD4736A),
         userBubbleText: Colors.white,
 
         // Markdown / code
@@ -457,7 +538,7 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
         micIdle: Color(0xFF3A3A3C),
 
         // Prompt
-        sendActive: Colors.cyan,
+        sendActive: Color(0xFFE8758A),
         promptBarBorder: Color(0xFF2C2C2E),
 
         // Destructive

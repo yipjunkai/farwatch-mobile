@@ -96,6 +96,7 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
                   ? _EmptyAgentState(pairing: widget.pairing)
                   : ListView.builder(
                       controller: _scrollController,
+                      physics: adaptiveScrollPhysics,
                       padding: const EdgeInsets.all(12),
                       itemCount: itemCount,
                       itemBuilder: (context, index) {

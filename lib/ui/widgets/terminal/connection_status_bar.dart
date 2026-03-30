@@ -20,14 +20,14 @@ class ConnectionStatusBar extends ConsumerWidget {
     final c = context.colors;
 
     final (icon, label, color) = switch (ts.sessionState) {
-      SessionState.disconnected    => (Icons.link_off, 'Disconnected', c.statusNeutral),
-      SessionState.connecting      => (Icons.sync, 'Connecting...', c.statusConnecting),
-      SessionState.waitingForPeer  => (Icons.hourglass_empty, 'Waiting for host...', c.statusConnecting),
-      SessionState.handshaking     => (Icons.handshake, 'Key exchange...', c.statusWarning),
-      SessionState.awaitingConfirm => (Icons.handshake, 'Verifying...', c.statusWarning),
-      SessionState.connected       => (Icons.lock, 'Connected (E2E encrypted)', c.statusConnected),
-      SessionState.reconnecting    => (Icons.sync, 'Reconnecting...', c.statusConnecting),
-      SessionState.error           => (Icons.error, ts.error ?? 'Error', c.statusError),
+      SessionState.disconnected    => (isApplePlatform ? CupertinoIcons.link : Icons.link_off, 'Disconnected', c.statusNeutral),
+      SessionState.connecting      => (isApplePlatform ? CupertinoIcons.arrow_2_circlepath : Icons.sync, 'Connecting...', c.statusConnecting),
+      SessionState.waitingForPeer  => (isApplePlatform ? CupertinoIcons.clock : Icons.hourglass_empty, 'Waiting for host...', c.statusConnecting),
+      SessionState.handshaking     => (isApplePlatform ? CupertinoIcons.hand_raised : Icons.handshake, 'Key exchange...', c.statusWarning),
+      SessionState.awaitingConfirm => (isApplePlatform ? CupertinoIcons.checkmark_shield : Icons.handshake, 'Verifying...', c.statusWarning),
+      SessionState.connected       => (isApplePlatform ? CupertinoIcons.lock_fill : Icons.lock, 'Connected (E2E encrypted)', c.statusConnected),
+      SessionState.reconnecting    => (isApplePlatform ? CupertinoIcons.arrow_2_circlepath : Icons.sync, 'Reconnecting...', c.statusConnecting),
+      SessionState.error           => (isApplePlatform ? CupertinoIcons.exclamationmark_circle : Icons.error, ts.error ?? 'Error', c.statusError),
     };
 
     final showReconnect = ts.sessionState == SessionState.error ||

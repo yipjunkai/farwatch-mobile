@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/pairing.dart';
@@ -33,6 +34,7 @@ class HomeScreen extends ConsumerWidget {
   // ---------------------------------------------------------------------------
 
   void _openScanner(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.selectionClick();
     final result = await Navigator.of(context).push<PairingUri>(
       adaptivePageRoute(builder: (_) => const ScanScreen()),
     );
@@ -51,6 +53,7 @@ class HomeScreen extends ConsumerWidget {
 
   void _reconnectSession(
       BuildContext context, WidgetRef ref, SessionRecord record) {
+    HapticFeedback.selectionClick();
     try {
       final pairing = PairingUri.parse(record.pairingUri);
       _navigateToTerminal(context, ref, pairing);
@@ -77,76 +80,41 @@ class HomeScreen extends ConsumerWidget {
       isDestructive: true,
     );
     if (confirmed) {
+      HapticFeedback.mediumImpact();
       ref.read(sessionHistoryProvider.notifier).clear();
     }
   }
 
   // ---------------------------------------------------------------------------
-  // Session list
+  // Session list (sliver-based, used inside CustomScrollView)
   // ---------------------------------------------------------------------------
 
-  Widget _buildSessionList(
+  List<Widget> _buildSessionSlivers(
       BuildContext context, WidgetRef ref, List<SessionRecord> sessions) {
-    final c = context.colors;
-    if (isApplePlatform) {
-      return CustomScrollView(
-        slivers: [
-          SliverSafeArea(
-            top: false,
-            sliver: SliverPadding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) => SessionTile(
-                    record: sessions[i],
-                    onTap: () =>
-                        _reconnectSession(context, ref, sessions[i]),
-                    onDelete: () => ref
-                        .read(sessionHistoryProvider.notifier)
-                        .remove(sessions[i].sessionId),
-                  ),
-                  childCount: sessions.length,
-                ),
+    return [
+      SliverSafeArea(
+        top: false,
+        sliver: SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, i) => SessionTile(
+                record: sessions[i],
+                onTap: () => _reconnectSession(context, ref, sessions[i]),
+                onDelete: () => ref
+                    .read(sessionHistoryProvider.notifier)
+                    .remove(sessions[i].sessionId),
               ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text('Recent Sessions',
-              style: TextStyle(
-                  color: c.textTertiary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5)),
-        ),
-        Expanded(
-          child: ListView.separated(
-            itemCount: sessions.length,
-            separatorBuilder: (_, _) =>
-                Divider(height: 1, color: c.surfacePrimary),
-            itemBuilder: (_, i) => SessionTile(
-              record: sessions[i],
-              onTap: () => _reconnectSession(context, ref, sessions[i]),
-              onDelete: () => ref
-                  .read(sessionHistoryProvider.notifier)
-                  .remove(sessions[i].sessionId),
+              childCount: sessions.length,
             ),
           ),
         ),
-      ],
-    );
+      ),
+    ];
   }
 
   // ---------------------------------------------------------------------------
-  // Shells
+  // Material shell
   // ---------------------------------------------------------------------------
 
   Widget _buildMaterialScreen(BuildContext context, WidgetRef ref,
@@ -176,7 +144,36 @@ class HomeScreen extends ConsumerWidget {
                       onConnect: (uri) =>
                           _connectFromUri(context, ref, uri)),
                 )
-              : _buildSessionList(context, ref, sessions),
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Text('Recent Sessions',
+                          style: TextStyle(
+                              color: c.textTertiary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5)),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        physics: adaptiveScrollPhysics,
+                        itemCount: sessions.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: c.surfacePrimary),
+                        itemBuilder: (_, i) => SessionTile(
+                          record: sessions[i],
+                          onTap: () =>
+                              _reconnectSession(context, ref, sessions[i]),
+                          onDelete: () => ref
+                              .read(sessionHistoryProvider.notifier)
+                              .remove(sessions[i].sessionId),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
       floatingActionButton: sessions.isNotEmpty
           ? FloatingActionButton(
               onPressed: () => _openScanner(context, ref),
@@ -187,43 +184,58 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Cupertino shell — large title, single QR button in nav bar
+  // ---------------------------------------------------------------------------
+
   Widget _buildCupertinoScreen(BuildContext context, WidgetRef ref,
       List<SessionRecord> sessions, bool loading) {
     final c = context.colors;
     return CupertinoPageScaffold(
       backgroundColor: c.background,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: c.navBarBackground,
-        middle: Text('Farwatch', style: TextStyle(color: c.textPrimary)),
-        leading: sessions.isNotEmpty
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                onPressed: () => _clearHistory(context, ref),
-                child: Icon(CupertinoIcons.trash,
-                    size: 20, color: c.statusNeutral),
-              )
-            : null,
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          minimumSize: Size.zero,
-          onPressed: () => _openScanner(context, ref),
-          child: Icon(CupertinoIcons.qrcode_viewfinder,
-              size: 22, color: c.accent),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: loading
-            ? const Center(child: CupertinoActivityIndicator())
-            : sessions.isEmpty
-                ? EmptyState(
-                    onScanQr: () => _openScanner(context, ref),
-                    onPasteUri: () => showManualEntry(context,
-                        onConnect: (uri) =>
-                            _connectFromUri(context, ref, uri)),
+      child: CustomScrollView(
+        physics: adaptiveScrollPhysics,
+        slivers: [
+          CupertinoSliverNavigationBar(
+            backgroundColor: c.navBarBackground,
+            largeTitle: Text('Farwatch',
+                style: TextStyle(color: c.textPrimary)),
+            leading: sessions.isNotEmpty
+                ? CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    onPressed: () => _clearHistory(context, ref),
+                    child: Text('Clear',
+                        style: TextStyle(
+                            color: c.statusError, fontSize: 17)),
                   )
-                : _buildSessionList(context, ref, sessions),
+                : null,
+            trailing: sessions.isNotEmpty
+                ? CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    onPressed: () => _openScanner(context, ref),
+                    child: Icon(CupertinoIcons.qrcode_viewfinder,
+                        size: 24, color: c.accent),
+                  )
+                : null,
+          ),
+          if (loading)
+            const SliverFillRemaining(
+              child: Center(child: CupertinoActivityIndicator()),
+            )
+          else if (sessions.isEmpty)
+            SliverFillRemaining(
+              child: EmptyState(
+                onScanQr: () => _openScanner(context, ref),
+                onPasteUri: () => showManualEntry(context,
+                    onConnect: (uri) =>
+                        _connectFromUri(context, ref, uri)),
+              ),
+            )
+          else
+            ..._buildSessionSlivers(context, ref, sessions),
+        ],
       ),
     );
   }

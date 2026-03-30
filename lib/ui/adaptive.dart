@@ -28,6 +28,17 @@ const _kGlassDark = Color(0xCC1C1C1E);
 const _kGlassBorder = Color(0x33FFFFFF);
 
 // ---------------------------------------------------------------------------
+// Scroll physics
+// ---------------------------------------------------------------------------
+
+/// Returns platform-appropriate scroll physics.
+/// iOS: BouncingScrollPhysics (rubber-band overscroll).
+/// Android: ClampingScrollPhysics (default).
+ScrollPhysics get adaptiveScrollPhysics => isApplePlatform
+    ? const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics())
+    : const ClampingScrollPhysics();
+
+// ---------------------------------------------------------------------------
 // AdaptiveScaffold
 // ---------------------------------------------------------------------------
 
@@ -285,6 +296,7 @@ class GlassContainer extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final double borderRadius;
   final Color? color;
+  final double blurSigma;
 
   const GlassContainer({
     super.key,
@@ -293,6 +305,7 @@ class GlassContainer extends StatelessWidget {
     this.margin,
     this.borderRadius = 12,
     this.color,
+    this.blurSigma = 24,
   });
 
   @override
@@ -304,7 +317,7 @@ class GlassContainer extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
@@ -337,27 +350,94 @@ class GlassContainer extends StatelessWidget {
 void showAdaptiveToast(BuildContext context, String message) {
   if (isApplePlatform) {
     final overlay = Overlay.of(context);
-    final entry = OverlayEntry(
+    late OverlayEntry entry;
+    entry = OverlayEntry(
       // Overlay callbacks don't have Theme access, so use constants.
-      builder: (ctx) => Positioned(
-        bottom: MediaQuery.of(ctx).padding.bottom + 80,
-        left: 32, right: 32,
+      builder: (ctx) => _AnimatedToast(
+        message: message,
+        bottomPadding: MediaQuery.of(ctx).padding.bottom,
+        onDismiss: () {
+          try {
+            entry.remove();
+          } catch (_) {}
+        },
+      ),
+    );
+    overlay.insert(entry);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// Animated iOS-style toast with fade-in/out.
+class _AnimatedToast extends StatefulWidget {
+  final String message;
+  final double bottomPadding;
+  final VoidCallback onDismiss;
+
+  const _AnimatedToast({
+    required this.message,
+    required this.bottomPadding,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_AnimatedToast> createState() => _AnimatedToastState();
+}
+
+class _AnimatedToastState extends State<_AnimatedToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 250),
+      vsync: this,
+    );
+    _opacity = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController.forward();
+    Future.delayed(const Duration(seconds: 2, milliseconds: 500), () {
+      if (mounted) {
+        _animController.reverse().then((_) => widget.onDismiss());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: widget.bottomPadding + 80,
+      left: 32,
+      right: 32,
+      child: FadeTransition(
+        opacity: _opacity,
         child: Center(
           child: Material(
             color: Colors.transparent,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
                     color: _kGlassDark,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: _kGlassBorder, width: 0.5),
                   ),
-                  child: Text(message,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                  child: Text(widget.message,
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 14),
                       textAlign: TextAlign.center),
                 ),
               ),
@@ -366,16 +446,6 @@ void showAdaptiveToast(BuildContext context, String message) {
         ),
       ),
     );
-    overlay.insert(entry);
-    Future.delayed(const Duration(seconds: 3), () {
-      try {
-        entry.remove();
-      } catch (_) {
-        // Entry may already be removed if the overlay was disposed.
-      }
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../core/session_history.dart';
@@ -66,7 +67,10 @@ class SessionTile extends StatelessWidget {
         color: c.destructive,
         child: Icon(Icons.delete, color: c.destructiveOnSurface),
       ),
-      onDismissed: (_) => onDelete(),
+      onDismissed: (_) {
+        HapticFeedback.mediumImpact();
+        onDelete();
+      },
       child: ListTile(
         leading: Icon(icon, color: c.accent, size: 28),
         title: Text(
@@ -112,7 +116,10 @@ class SessionTile extends StatelessWidget {
         ),
         child: Icon(CupertinoIcons.delete, color: c.destructiveOnSurface),
       ),
-      onDismissed: (_) => onDelete(),
+      onDismissed: (_) {
+        HapticFeedback.mediumImpact();
+        onDelete();
+      },
       child: GlassContainer(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

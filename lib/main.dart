@@ -45,6 +45,28 @@ class _FarwatchAppState extends ConsumerState<FarwatchApp> {
     );
   }
 
+  /// Pick color tokens based on platform brightness.
+  FarwatchColors _colorsFor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? FarwatchColors.dark()
+        : FarwatchColors.light();
+  }
+
+  /// Update the status bar style to match the current theme brightness.
+  void _updateStatusBar(Brightness brightness) {
+    SystemChrome.setSystemUIOverlayStyle(
+      brightness == Brightness.dark
+          ? const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.dark,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.light,
+              statusBarIconBrightness: Brightness.dark,
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Listen for deep links and navigate to terminal.
@@ -52,7 +74,13 @@ class _FarwatchAppState extends ConsumerState<FarwatchApp> {
       next.whenData((pairing) => _navigateToTerminal(pairing));
     });
 
-    final colors = FarwatchColors.dark();
+    final brightness = MediaQuery.platformBrightnessOf(context);
+    _updateStatusBar(brightness);
+
+    final darkColors = FarwatchColors.dark();
+    final lightColors = FarwatchColors.light();
+
+    final colors = _colorsFor(brightness);
 
     if (isApplePlatform) {
       // Wrap CupertinoApp in a Theme so widgets can access FarwatchColors
@@ -74,7 +102,9 @@ class _FarwatchAppState extends ConsumerState<FarwatchApp> {
       title: 'Farwatch',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      theme: buildMaterialTheme(colors: colors),
+      theme: buildMaterialTheme(colors: lightColors),
+      darkTheme: buildMaterialTheme(colors: darkColors),
+      themeMode: ThemeMode.system,
       home: const HomeScreen(),
     );
   }

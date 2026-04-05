@@ -30,20 +30,21 @@ class AgentMessageCard extends StatelessWidget {
 
   /// Whether this message type has text worth copying.
   bool get _isCopyable => switch (message.type) {
-        AgentMessageType.text ||
-        AgentMessageType.userPrompt ||
-        AgentMessageType.thinking ||
-        AgentMessageType.toolResult ||
-        AgentMessageType.toolError ||
-        AgentMessageType.system => true,
-        _ => false,
-      };
+    AgentMessageType.text ||
+    AgentMessageType.userPrompt ||
+    AgentMessageType.thinking ||
+    AgentMessageType.toolResult ||
+    AgentMessageType.toolError ||
+    AgentMessageType.system => true,
+    _ => false,
+  };
 
   /// The text to copy for this message.
   String get _copyText => switch (message.type) {
-        AgentMessageType.toolCall => message.toolResult ?? message.toolInput ?? message.text,
-        _ => message.text,
-      };
+    AgentMessageType.toolCall =>
+      message.toolResult ?? message.toolInput ?? message.text,
+    _ => message.text,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -57,10 +58,14 @@ class AgentMessageCard extends StatelessWidget {
       AgentMessageType.toolResult => _ResultCard(text: message.text, colors: c),
       AgentMessageType.toolError => _ErrorCard(text: message.text, colors: c),
       AgentMessageType.turnMarker => _TurnMarker(text: message.text, colors: c),
-      AgentMessageType.permissionRequest =>
-        PermissionCard(message: message, pairing: pairing),
-      AgentMessageType.questionRequest =>
-        QuestionCard(message: message, pairing: pairing),
+      AgentMessageType.permissionRequest => PermissionCard(
+        message: message,
+        pairing: pairing,
+      ),
+      AgentMessageType.questionRequest => QuestionCard(
+        message: message,
+        pairing: pairing,
+      ),
     };
 
     if (!_isCopyable && message.type != AgentMessageType.toolCall) {
@@ -111,16 +116,19 @@ class AgentMessageCard extends StatelessWidget {
                   entry.remove();
                 },
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.copy, size: 16, color: c.textSecondary),
                       const SizedBox(width: 6),
-                      Text('Copy',
-                          style: TextStyle(
-                              color: c.textPrimary, fontSize: 13)),
+                      Text(
+                        'Copy',
+                        style: TextStyle(color: c.textPrimary, fontSize: 13),
+                      ),
                     ],
                   ),
                 ),
@@ -153,11 +161,14 @@ class _SystemCard extends StatelessWidget {
           color: colors.systemSurface,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(text,
-            style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 12,
-                fontFamily: 'monospace')),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 12,
+            fontFamily: 'monospace',
+          ),
+        ),
       ),
     );
   }
@@ -179,7 +190,9 @@ class _UserBubble extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const SizedBox(width: 48), // left gutter so bubble doesn't span full width
+          const SizedBox(
+            width: 48,
+          ), // left gutter so bubble doesn't span full width
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -267,17 +280,23 @@ class _ThinkingCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: colors.thinkingBorder),
         ),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.psychology, color: colors.thinkingIcon, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.psychology, color: colors.thinkingIcon, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                text,
                 style: TextStyle(
-                    color: colors.thinkingAccent,
-                    fontSize: 13,
-                    fontStyle: FontStyle.italic)),
-          ),
-        ]),
+                  color: colors.thinkingAccent,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -383,17 +402,24 @@ class _ErrorCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: colors.errorBorder),
         ),
-        child: Row(children: [
-          Icon(Icons.error_outline, color: colors.statusErrorAccent, size: 14),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(text,
-                style:
-                    TextStyle(color: colors.statusErrorAccent, fontSize: 12),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colors.statusErrorAccent,
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(color: colors.statusErrorAccent, fontSize: 12),
                 maxLines: 5,
-                overflow: TextOverflow.ellipsis),
-          ),
-        ]),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -412,16 +438,19 @@ class _TurnMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(children: [
-        Expanded(child: Divider(color: colors.surfaceTertiary)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(text,
-              style: TextStyle(
-                  color: colors.textPlaceholder, fontSize: 11)),
-        ),
-        Expanded(child: Divider(color: colors.surfaceTertiary)),
-      ]),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: colors.surfaceTertiary)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              text,
+              style: TextStyle(color: colors.textPlaceholder, fontSize: 11),
+            ),
+          ),
+          Expanded(child: Divider(color: colors.surfaceTertiary)),
+        ],
+      ),
     );
   }
 }
@@ -457,7 +486,9 @@ class _CopyButtonState extends State<_CopyButton> {
       child: Icon(
         _copied ? Icons.check : Icons.copy,
         size: 14,
-        color: _copied ? widget.colors.statusConnected : widget.colors.copyButton,
+        color: _copied
+            ? widget.colors.statusConnected
+            : widget.colors.copyButton,
       ),
     );
   }

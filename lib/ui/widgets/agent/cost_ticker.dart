@@ -36,21 +36,28 @@ class CostTicker extends ConsumerWidget {
           children: [
             Icon(Icons.toll, color: c.costIcon, size: 14),
             const SizedBox(width: 6),
-            Text('\$${agent.costUsd.toStringAsFixed(4)}',
-                style: TextStyle(
-                    color: c.textSecondary,
-                    fontSize: 12,
-                    fontFamily: 'monospace')),
+            Text(
+              '\$${agent.costUsd.toStringAsFixed(4)}',
+              style: TextStyle(
+                color: c.textSecondary,
+                fontSize: 12,
+                fontFamily: 'monospace',
+              ),
+            ),
             const SizedBox(width: 12),
             Icon(Icons.arrow_downward, color: c.costIcon, size: 12),
             const SizedBox(width: 3),
-            Text(_fmt(agent.inputTokens),
-                style: TextStyle(color: c.textTertiary, fontSize: 11)),
+            Text(
+              _fmt(agent.inputTokens),
+              style: TextStyle(color: c.textTertiary, fontSize: 11),
+            ),
             const SizedBox(width: 8),
             Icon(Icons.arrow_upward, color: c.costIcon, size: 12),
             const SizedBox(width: 3),
-            Text(_fmt(agent.outputTokens),
-                style: TextStyle(color: c.textTertiary, fontSize: 11)),
+            Text(
+              _fmt(agent.outputTokens),
+              style: TextStyle(color: c.textTertiary, fontSize: 11),
+            ),
             const Spacer(),
             Icon(Icons.expand_more, color: c.textPlaceholder, size: 16),
           ],
@@ -68,7 +75,10 @@ class CostTicker extends ConsumerWidget {
   }
 
   void _showCostBreakdown(
-      BuildContext context, AgentState agent, FarwatchColors c) {
+    BuildContext context,
+    AgentState agent,
+    FarwatchColors c,
+  ) {
     if (isApplePlatform) {
       showCupertinoModalPopup<void>(
         context: context,
@@ -100,8 +110,7 @@ class _CostSheet extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isApplePlatform ? colors.glassSurface : colors.surfacePrimary,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -119,11 +128,14 @@ class _CostSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Session Cost Breakdown',
-                style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600)),
+            Text(
+              'Session Cost Breakdown',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 16),
 
             // Total cost — big number
@@ -146,9 +158,10 @@ class _CostSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Total Session Cost',
-                      style: TextStyle(
-                          color: colors.textTertiary, fontSize: 12)),
+                  Text(
+                    'Total Session Cost',
+                    style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -156,18 +169,20 @@ class _CostSheet extends StatelessWidget {
 
             // Token breakdown
             _TokenRow(
-                label: 'Input Tokens',
-                value: agent.inputTokens,
-                icon: Icons.arrow_downward,
-                color: colors.accent,
-                colors: colors),
+              label: 'Input Tokens',
+              value: agent.inputTokens,
+              icon: Icons.arrow_downward,
+              color: colors.accent,
+              colors: colors,
+            ),
             const SizedBox(height: 8),
             _TokenRow(
-                label: 'Output Tokens',
-                value: agent.outputTokens,
-                icon: Icons.arrow_upward,
-                color: colors.sendActive,
-                colors: colors),
+              label: 'Output Tokens',
+              value: agent.outputTokens,
+              icon: Icons.arrow_upward,
+              color: colors.sendActive,
+              colors: colors,
+            ),
             const SizedBox(height: 8),
 
             // Message count
@@ -175,29 +190,36 @@ class _CostSheet extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Messages',
-                    style: TextStyle(
-                        color: colors.textTertiary, fontSize: 13)),
-                Text('${agent.messages.length}',
-                    style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13,
-                        fontFamily: 'monospace')),
+                Text(
+                  'Messages',
+                  style: TextStyle(color: colors.textTertiary, fontSize: 13),
+                ),
+                Text(
+                  '${agent.messages.length}',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Active Tasks',
-                    style: TextStyle(
-                        color: colors.textTertiary, fontSize: 13)),
                 Text(
-                    '${agent.todos.where((t) => t.status == "in_progress" || t.status == "pending").length}',
-                    style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 13,
-                        fontFamily: 'monospace')),
+                  'Active Tasks',
+                  style: TextStyle(color: colors.textTertiary, fontSize: 13),
+                ),
+                Text(
+                  '${agent.todos.where((t) => t.status == "in_progress" || t.status == "pending").length}',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -229,15 +251,15 @@ class _TokenRow extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 8),
-        Text(label,
-            style: TextStyle(color: colors.textTertiary, fontSize: 13)),
+        Text(label, style: TextStyle(color: colors.textTertiary, fontSize: 13)),
         const Spacer(),
         Text(
           _formatDetailed(value),
           style: TextStyle(
-              color: colors.textSecondary,
-              fontSize: 13,
-              fontFamily: 'monospace'),
+            color: colors.textSecondary,
+            fontSize: 13,
+            fontFamily: 'monospace',
+          ),
         ),
       ],
     );

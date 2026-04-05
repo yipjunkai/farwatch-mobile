@@ -7,8 +7,7 @@ import 'dart:convert';
 class ToolInputParser {
   final Map<String, dynamic>? _json;
 
-  ToolInputParser(String? rawInput)
-      : _json = _tryParse(rawInput);
+  ToolInputParser(String? rawInput) : _json = _tryParse(rawInput);
 
   static Map<String, dynamic>? _tryParse(String? raw) {
     if (raw == null || raw.isEmpty) return null;

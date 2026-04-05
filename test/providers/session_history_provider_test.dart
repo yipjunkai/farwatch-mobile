@@ -64,8 +64,7 @@ void main() {
       final notifier = container.read(sessionHistoryProvider.notifier);
 
       await notifier.upsert(makeRecord('s1'));
-      await notifier.updateSession('s1',
-          endReason: SessionEndReason.hostEnded);
+      await notifier.updateSession('s1', endReason: SessionEndReason.hostEnded);
 
       final records = container.read(sessionHistoryProvider).valueOrNull!;
       expect(records.first.endReason, SessionEndReason.hostEnded);
@@ -76,8 +75,10 @@ void main() {
       final notifier = container.read(sessionHistoryProvider.notifier);
 
       await notifier.upsert(makeRecord('s1'));
-      await notifier.updateSession('nonexistent',
-          endReason: SessionEndReason.connectionLost);
+      await notifier.updateSession(
+        'nonexistent',
+        endReason: SessionEndReason.connectionLost,
+      );
 
       final records = container.read(sessionHistoryProvider).valueOrNull!;
       expect(records, hasLength(1));

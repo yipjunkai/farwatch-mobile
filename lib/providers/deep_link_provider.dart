@@ -25,14 +25,11 @@ final deepLinkProvider = StreamProvider<PairingUri>((ref) {
   }();
 
   // Warm start: listen for links while the app is running.
-  final sub = appLinks.uriLinkStream.listen(
-    (uri) {
-      if (uri.scheme == 'farwatch') {
-        controller.add(PairingUri.parse(uri.toString()));
-      }
-    },
-    onError: (e) => log('[deeplink] link stream error: $e'),
-  );
+  final sub = appLinks.uriLinkStream.listen((uri) {
+    if (uri.scheme == 'farwatch') {
+      controller.add(PairingUri.parse(uri.toString()));
+    }
+  }, onError: (e) => log('[deeplink] link stream error: $e'));
 
   ref.onDispose(() {
     sub.cancel();

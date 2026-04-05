@@ -37,7 +37,10 @@ class PairingUri {
       if (apiKey != null) 'key': apiKey,
     };
     final query = params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value as String)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value as String)}',
+        )
         .join('&');
     return 'farwatch://pair?$query';
   }

@@ -24,9 +24,9 @@ class QuestionOption {
   const QuestionOption({required this.label, required this.description});
 
   factory QuestionOption.fromJson(Map<String, dynamic> json) => QuestionOption(
-        label: json['label'] as String? ?? '',
-        description: json['description'] as String? ?? '',
-      );
+    label: json['label'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+  );
 }
 
 /// A single question with header, options, and whether multiple selections are allowed.
@@ -44,14 +44,15 @@ class QuestionItem {
   });
 
   factory QuestionItem.fromJson(Map<String, dynamic> json) => QuestionItem(
-        header: json['header'] as String? ?? '',
-        question: json['question'] as String? ?? '',
-        options: (json['options'] as List<dynamic>?)
-                ?.map((o) => QuestionOption.fromJson(o as Map<String, dynamic>))
-                .toList() ??
-            [],
-        multiple: json['multiple'] as bool? ?? false,
-      );
+    header: json['header'] as String? ?? '',
+    question: json['question'] as String? ?? '',
+    options:
+        (json['options'] as List<dynamic>?)
+            ?.map((o) => QuestionOption.fromJson(o as Map<String, dynamic>))
+            .toList() ??
+        [],
+    multiple: json['multiple'] as bool? ?? false,
+  );
 
   /// True when this is a simple binary choice (2 options, not multi-select).
   bool get isBinary => options.length == 2 && !multiple;
@@ -64,11 +65,12 @@ class QuestionData {
   const QuestionData({required this.questions});
 
   factory QuestionData.fromJson(Map<String, dynamic> json) => QuestionData(
-        questions: (json['questions'] as List<dynamic>?)
-                ?.map((q) => QuestionItem.fromJson(q as Map<String, dynamic>))
-                .toList() ??
-            [],
-      );
+    questions:
+        (json['questions'] as List<dynamic>?)
+            ?.map((q) => QuestionItem.fromJson(q as Map<String, dynamic>))
+            .toList() ??
+        [],
+  );
 }
 
 // ---------------------------------------------------------------------------

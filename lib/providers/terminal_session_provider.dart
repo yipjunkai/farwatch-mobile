@@ -49,8 +49,8 @@ class TerminalSessionState {
 /// [RelaySession] and [Terminal] are cleaned up when the screen pops.
 final terminalSessionProvider = NotifierProvider.autoDispose
     .family<TerminalSessionNotifier, TerminalSessionState, PairingUri>(
-  TerminalSessionNotifier.new,
-);
+      TerminalSessionNotifier.new,
+    );
 
 class TerminalSessionNotifier
     extends AutoDisposeFamilyNotifier<TerminalSessionState, PairingUri> {
@@ -125,12 +125,11 @@ class TerminalSessionNotifier
     required String transcript,
     String? intent,
     required double confidence,
-  }) =>
-      _session.sendVoiceCommand(
-        transcript: transcript,
-        intent: intent,
-        confidence: confidence,
-      );
+  }) => _session.sendVoiceCommand(
+    transcript: transcript,
+    intent: intent,
+    confidence: confidence,
+  );
 
   // ── Internal ───────────────────────────────────────────────────────────
 
@@ -143,8 +142,7 @@ class TerminalSessionNotifier
     );
 
     // Auto-enable structured view on connect.
-    if (_session.state == SessionState.connected &&
-        _session.isStructuredTool) {
+    if (_session.state == SessionState.connected && _session.isStructuredTool) {
       ref.read(agentStateProvider.notifier).enableStructuredView();
     }
 
@@ -185,15 +183,16 @@ class TerminalSessionNotifier
   }
 
   void _saveSessionRecord() {
-    final record = SessionRecord.fromPairing(arg).copyWith(
-      toolName: _session.toolName,
-      lastActiveAt: DateTime.now(),
-    );
+    final record = SessionRecord.fromPairing(
+      arg,
+    ).copyWith(toolName: _session.toolName, lastActiveAt: DateTime.now());
     ref.read(sessionHistoryProvider.notifier).upsert(record);
   }
 
   void _updateHistory(SessionEndReason reason) {
-    ref.read(sessionHistoryProvider.notifier).updateSession(
+    ref
+        .read(sessionHistoryProvider.notifier)
+        .updateSession(
           arg.sessionId,
           lastActiveAt: DateTime.now(),
           endReason: reason,

@@ -36,7 +36,9 @@ class _PromptBarState extends ConsumerState<PromptBar> {
     HapticFeedback.lightImpact();
     // Echo the user's prompt as a chat bubble before sending.
     ref.read(agentStateProvider.notifier).addUserPrompt(text);
-    ref.read(terminalSessionProvider(widget.pairing).notifier).sendAgentPrompt(text);
+    ref
+        .read(terminalSessionProvider(widget.pairing).notifier)
+        .sendAgentPrompt(text);
     _controller.clear();
   }
 
@@ -60,8 +62,9 @@ class _PromptBarState extends ConsumerState<PromptBar> {
     if (speech.completedTranscript != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _controller.text = speech.completedTranscript!;
-        _controller.selection =
-            TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+        _controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _controller.text.length),
+        );
         ref.read(speechProvider.notifier).clearCompletedTranscript();
         HapticFeedback.mediumImpact();
       });
@@ -72,7 +75,12 @@ class _PromptBarState extends ConsumerState<PromptBar> {
     return _buildMaterial(c, hasText, agent, speech);
   }
 
-  Widget _buildCupertino(FarwatchColors c, bool hasText, AgentState agent, SpeechState speech) {
+  Widget _buildCupertino(
+    FarwatchColors c,
+    bool hasText,
+    AgentState agent,
+    SpeechState speech,
+  ) {
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -84,54 +92,73 @@ class _PromptBarState extends ConsumerState<PromptBar> {
           ),
           child: SafeArea(
             top: false,
-            child: Row(children: [
-              Expanded(
-                child: CupertinoTextField(
-                  controller: _controller,
-                  enabled: !agent.agentBusy,
-                  style: TextStyle(color: c.textPrimary, fontSize: 14),
-                  placeholder: speech.listening
-                      ? 'Listening...'
-                      : agent.agentBusy ? 'Agent is working...' : 'Send a prompt...',
-                  placeholderStyle: TextStyle(
-                      color: speech.listening ? c.micActive : c.textPlaceholder),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                      color: c.inputBackground, borderRadius: BorderRadius.circular(20)),
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _send(),
-                  onChanged: (_) => setState(() {}),
+            child: Row(
+              children: [
+                Expanded(
+                  child: CupertinoTextField(
+                    controller: _controller,
+                    enabled: !agent.agentBusy,
+                    style: TextStyle(color: c.textPrimary, fontSize: 14),
+                    placeholder: speech.listening
+                        ? 'Listening...'
+                        : agent.agentBusy
+                        ? 'Agent is working...'
+                        : 'Send a prompt...',
+                    placeholderStyle: TextStyle(
+                      color: speech.listening ? c.micActive : c.textPlaceholder,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.inputBackground,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _send(),
+                    onChanged: (_) => setState(() {}),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 36, height: 36,
-                child: agent.agentBusy
-                    ? const Center(child: CupertinoActivityIndicator())
-                    : CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        color: hasText
-                            ? c.accent
-                            : (speech.listening ? c.micActive : c.micIdle),
-                        borderRadius: BorderRadius.circular(18),
-                        onPressed: () => _onAction(hasText, speech),
-                        child: Icon(
-                          hasText
-                              ? CupertinoIcons.arrow_up
-                              : speech.listening ? CupertinoIcons.stop_fill : CupertinoIcons.mic,
-                          color: c.textPrimary, size: 18,
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: agent.agentBusy
+                      ? const Center(child: CupertinoActivityIndicator())
+                      : CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          color: hasText
+                              ? c.accent
+                              : (speech.listening ? c.micActive : c.micIdle),
+                          borderRadius: BorderRadius.circular(18),
+                          onPressed: () => _onAction(hasText, speech),
+                          child: Icon(
+                            hasText
+                                ? CupertinoIcons.arrow_up
+                                : speech.listening
+                                ? CupertinoIcons.stop_fill
+                                : CupertinoIcons.mic,
+                            color: c.textPrimary,
+                            size: 18,
+                          ),
                         ),
-                      ),
-              ),
-            ]),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildMaterial(FarwatchColors c, bool hasText, AgentState agent, SpeechState speech) {
+  Widget _buildMaterial(
+    FarwatchColors c,
+    bool hasText,
+    AgentState agent,
+    SpeechState speech,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -140,64 +167,90 @@ class _PromptBarState extends ConsumerState<PromptBar> {
       ),
       child: SafeArea(
         top: false,
-        child: Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              enabled: !agent.agentBusy,
-              style: TextStyle(color: c.textPrimary, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: speech.listening
-                    ? 'Listening...'
-                    : agent.agentBusy ? 'Agent is working...' : 'Send a prompt...',
-                hintStyle: TextStyle(
-                    color: speech.listening ? c.micActive : c.textPlaceholder),
-                border: OutlineInputBorder(
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                enabled: !agent.agentBusy,
+                style: TextStyle(color: c.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: speech.listening
+                      ? 'Listening...'
+                      : agent.agentBusy
+                      ? 'Agent is working...'
+                      : 'Send a prompt...',
+                  hintStyle: TextStyle(
+                    color: speech.listening ? c.micActive : c.textPlaceholder,
+                  ),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: c.surfaceTertiary)),
-                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: c.surfaceTertiary),
+                  ),
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: c.surfaceTertiary)),
-                disabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: c.surfaceTertiary),
+                  ),
+                  disabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: c.surfaceSecondary)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                isDense: true,
+                    borderSide: BorderSide(color: c.surfaceSecondary),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  isDense: true,
+                ),
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _send(),
+                onChanged: (_) => setState(() {}),
               ),
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _send(),
-              onChanged: (_) => setState(() {}),
             ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 40, height: 40,
-            child: agent.agentBusy
-                ? Container(
-                    decoration: BoxDecoration(color: c.surfaceSecondary, shape: BoxShape.circle),
-                    child: Center(
-                      child: SizedBox(
-                        width: 18, height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: c.sendActive),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: agent.agentBusy
+                  ? Container(
+                      decoration: BoxDecoration(
+                        color: c.surfaceSecondary,
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                  )
-                : Material(
-                    color: hasText ? c.sendActive : (speech.listening ? c.micActive : c.micIdle),
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => _onAction(hasText, speech),
                       child: Center(
-                        child: Icon(
-                          hasText ? Icons.arrow_upward : speech.listening ? Icons.stop : Icons.mic,
-                          color: c.textPrimary, size: 20,
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: c.sendActive,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Material(
+                      color: hasText
+                          ? c.sendActive
+                          : (speech.listening ? c.micActive : c.micIdle),
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => _onAction(hasText, speech),
+                        child: Center(
+                          child: Icon(
+                            hasText
+                                ? Icons.arrow_upward
+                                : speech.listening
+                                ? Icons.stop
+                                : Icons.mic,
+                            color: c.textPrimary,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-          ),
-        ]),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -15,7 +15,9 @@ enum PeerRole {
 
   /// MessagePack encodes Rust enums as {variant_name: null} for unit variants.
   /// serde serializes enum variants by name.
-  Map<String, dynamic> toMsgpack() => {name[0].toUpperCase() + name.substring(1): null};
+  Map<String, dynamic> toMsgpack() => {
+    name[0].toUpperCase() + name.substring(1): null,
+  };
 
   static PeerRole fromMsgpack(dynamic v) {
     if (v is Map) {
@@ -94,10 +96,7 @@ class RelayRoute {
 
   RelayRoute({required this.sessionId, required this.payload});
 
-  Map<String, dynamic> toMap() => {
-    'session_id': sessionId,
-    'payload': payload,
-  };
+  Map<String, dynamic> toMap() => {'session_id': sessionId, 'payload': payload};
 
   factory RelayRoute.fromMap(Map m) => RelayRoute(
     sessionId: m['session_id'] as String,
@@ -110,7 +109,11 @@ class PeerStatus {
   final PeerRole role;
   final bool online;
 
-  PeerStatus({required this.sessionId, required this.role, required this.online});
+  PeerStatus({
+    required this.sessionId,
+    required this.role,
+    required this.online,
+  });
 
   factory PeerStatus.fromMap(Map m) => PeerStatus(
     sessionId: m['session_id'] as String,
@@ -123,7 +126,8 @@ class RelayError {
   final String message;
   RelayError({required this.message});
 
-  factory RelayError.fromMap(Map m) => RelayError(message: m['message'] as String);
+  factory RelayError.fromMap(Map m) =>
+      RelayError(message: m['message'] as String);
 }
 
 // ---------------------------------------------------------------------------
@@ -253,10 +257,7 @@ class SealedFrame {
 
   SealedFrame({required this.nonce, required this.ciphertext});
 
-  Map<String, dynamic> toMap() => {
-    'nonce': nonce,
-    'ciphertext': ciphertext,
-  };
+  Map<String, dynamic> toMap() => {'nonce': nonce, 'ciphertext': ciphertext};
 
   factory SealedFrame.fromMap(Map m) => SealedFrame(
     nonce: m['nonce'] as int,
@@ -271,9 +272,8 @@ class HandshakeConfirm {
 
   Map<String, dynamic> toMap() => {'mac': mac};
 
-  factory HandshakeConfirm.fromMap(Map m) => HandshakeConfirm(
-    mac: _toUint8List(m['mac']),
-  );
+  factory HandshakeConfirm.fromMap(Map m) =>
+      HandshakeConfirm(mac: _toUint8List(m['mac']));
 }
 
 sealed class PeerFrame {}
@@ -346,7 +346,11 @@ class VoiceCommand extends SecureMessage {
   final String transcript;
   final String? intent;
   final double confidence;
-  VoiceCommand({required this.transcript, this.intent, required this.confidence});
+  VoiceCommand({
+    required this.transcript,
+    this.intent,
+    required this.confidence,
+  });
 }
 
 // ── Structured agent events (for rich clients) ──
@@ -358,7 +362,11 @@ class AgentSessionInit extends AgentEvent {
   final String sessionId;
   final String model;
   final List<String> tools;
-  AgentSessionInit({required this.sessionId, required this.model, required this.tools});
+  AgentSessionInit({
+    required this.sessionId,
+    required this.model,
+    required this.tools,
+  });
 }
 
 class AgentTurnStarted extends AgentEvent {}
@@ -382,14 +390,22 @@ class AgentToolUseStart extends AgentEvent {
   final String id;
   final String name;
   final String input;
-  AgentToolUseStart({required this.id, required this.name, required this.input});
+  AgentToolUseStart({
+    required this.id,
+    required this.name,
+    required this.input,
+  });
 }
 
 class AgentToolResult extends AgentEvent {
   final String id;
   final String content;
   final bool isError;
-  AgentToolResult({required this.id, required this.content, required this.isError});
+  AgentToolResult({
+    required this.id,
+    required this.content,
+    required this.isError,
+  });
 }
 
 class AgentTurnCompleted extends AgentEvent {
@@ -504,21 +520,23 @@ Uint8List encodeRelay(RelayMessage msg) {
 
 RelayMessage decodeRelay(Uint8List bytes) {
   final decoded = msgpack.deserialize(bytes);
-  if (decoded is! Map) throw FormatException('Expected map, got ${decoded.runtimeType}');
+  if (decoded is! Map) {
+    throw FormatException('Expected map, got ${decoded.runtimeType}');
+  }
 
   final entry = decoded.entries.first;
   final key = entry.key as String;
   final value = entry.value;
 
   return switch (key) {
-    'Register'   => throw UnsupportedError('Client should not receive Register'),
+    'Register' => throw UnsupportedError('Client should not receive Register'),
     'Registered' => RelayRegistered.fromValue(value),
-    'Route'      => RelayRouteMsg.fromValue(value),
+    'Route' => RelayRouteMsg.fromValue(value),
     'PeerStatus' => RelayPeerStatus.fromValue(value),
-    'Ping'       => RelayPing(value as int),
-    'Pong'       => RelayPong(value as int),
-    'Error'      => RelayErrorMsg.fromValue(value),
-    _            => RelayUnknown(key),
+    'Ping' => RelayPing(value as int),
+    'Pong' => RelayPong(value as int),
+    'Error' => RelayErrorMsg.fromValue(value),
+    _ => RelayUnknown(key),
   };
 }
 
@@ -530,7 +548,9 @@ Uint8List encodePeerFrame(PeerFrame frame) {
   }
   final map = switch (frame) {
     PeerFrameHandshake(handshake: final h) => {'Handshake': h.toMap()},
-    PeerFrameHandshakeConfirm(confirm: final c) => {'HandshakeConfirm': c.toMap()},
+    PeerFrameHandshakeConfirm(confirm: final c) => {
+      'HandshakeConfirm': c.toMap(),
+    },
     PeerFrameSecure(frame: final f) => {'Secure': f.toMap()},
     PeerFrameKeepAlive() => throw StateError('unreachable'),
     PeerFrameUnknown() => throw StateError('cannot encode unknown frame'),
@@ -556,11 +576,13 @@ PeerFrame decodePeerFrame(Uint8List bytes) {
   final value = entry.value;
 
   return switch (key) {
-    'Handshake'        => PeerFrameHandshake(Handshake.fromMap(value as Map)),
-    'HandshakeConfirm' => PeerFrameHandshakeConfirm(HandshakeConfirm.fromMap(value as Map)),
-    'Secure'           => PeerFrameSecure(SealedFrame.fromMap(value as Map)),
-    'KeepAlive'        => PeerFrameKeepAlive(),
-    _                  => PeerFrameUnknown(),
+    'Handshake' => PeerFrameHandshake(Handshake.fromMap(value as Map)),
+    'HandshakeConfirm' => PeerFrameHandshakeConfirm(
+      HandshakeConfirm.fromMap(value as Map),
+    ),
+    'Secure' => PeerFrameSecure(SealedFrame.fromMap(value as Map)),
+    'KeepAlive' => PeerFrameKeepAlive(),
+    _ => PeerFrameUnknown(),
   };
 }
 
@@ -570,63 +592,131 @@ Uint8List encodeSecureMessage(SecureMessage msg) {
     return msgpack.serialize('Heartbeat');
   }
   final map = switch (msg) {
-    PtyInput(data: final d)                     => {'PtyInput': d},
-    PtyOutput(data: final d)                    => {'PtyOutput': d},
-    Resize(cols: final c, rows: final r)        => {'Resize': {'cols': c, 'rows': r}},
-    Heartbeat()                                 => throw StateError('unreachable'),
-    VersionNotice(minimumVersion: final v)      => {'VersionNotice': {'minimum_version': v}},
-    SessionEnded(exitCode: final c)             => {'SessionEnded': {'exit_code': c}},
-    ClipboardMsg(content: final c)              => {'Clipboard': {'content': c}},
-    ReadOnlyMsg(enabled: final e)               => {'ReadOnly': {'enabled': e}},
-    VoiceCommand(transcript: final t, intent: final i, confidence: final c) =>
-      {'VoiceCommand': {'transcript': t, 'intent': i, 'confidence': c}},
+    PtyInput(data: final d) => {'PtyInput': d},
+    PtyOutput(data: final d) => {'PtyOutput': d},
+    Resize(cols: final c, rows: final r) => {
+      'Resize': {'cols': c, 'rows': r},
+    },
+    Heartbeat() => throw StateError('unreachable'),
+    VersionNotice(minimumVersion: final v) => {
+      'VersionNotice': {'minimum_version': v},
+    },
+    SessionEnded(exitCode: final c) => {
+      'SessionEnded': {'exit_code': c},
+    },
+    ClipboardMsg(content: final c) => {
+      'Clipboard': {'content': c},
+    },
+    ReadOnlyMsg(enabled: final e) => {
+      'ReadOnly': {'enabled': e},
+    },
+    VoiceCommand(transcript: final t, intent: final i, confidence: final c) => {
+      'VoiceCommand': {'transcript': t, 'intent': i, 'confidence': c},
+    },
     // ── Structured agent types ──
     AgentEvent evt => {'AgentEvent': _encodeAgentEvent(evt)},
     AgentCommand cmd => {'AgentCommand': _encodeAgentCommand(cmd)},
-    UnknownMessage(raw: final r)                => {'Unknown': r},
+    UnknownMessage(raw: final r) => {'Unknown': r},
   };
   return msgpack.serialize(map);
 }
 
 Map<String, dynamic> _encodeAgentEvent(AgentEvent evt) {
   return switch (evt) {
-    AgentSessionInit(sessionId: final s, model: final m, tools: final t) =>
-      {'SessionInit': {'session_id': s, 'model': m, 'tools': t}},
+    AgentSessionInit(sessionId: final s, model: final m, tools: final t) => {
+      'SessionInit': {'session_id': s, 'model': m, 'tools': t},
+    },
     AgentTurnStarted() => {'TurnStarted': null},
-    AgentTextDelta(text: final t) => {'TextDelta': {'text': t}},
-    AgentThinkingDelta(text: final t) => {'ThinkingDelta': {'text': t}},
-    AgentTextBlock(text: final t) => {'TextBlock': {'text': t}},
-    AgentToolUseStart(id: final i, name: final n, input: final inp) =>
-      {'ToolUseStart': {'id': i, 'name': n, 'input': inp}},
-    AgentToolResult(id: final i, content: final c, isError: final e) =>
-      {'ToolResult': {'id': i, 'content': c, 'is_error': e}},
-    AgentTurnCompleted(status: final s) => {'TurnCompleted': {'status': s}},
-    AgentSessionResult(result: final r, isError: final e, durationMs: final d, numTurns: final n) =>
-      {'SessionResult': {'result': r, 'is_error': e, 'duration_ms': d, 'num_turns': n}},
-    AgentPermissionRequest(id: final i, tool: final t, title: final ti, metadata: final m) =>
-      {'PermissionRequest': {'id': i, 'tool': t, 'title': ti, 'metadata': m}},
-    AgentPermissionResolved(id: final i, response: final r) =>
-      {'PermissionResolved': {'id': i, 'response': r}},
-    AgentTodoUpdate(todos: final t) =>
-      {'TodoUpdate': {'todos': t.map((item) => {
-        'id': item.id, 'content': item.content, 'status': item.status, 'priority': item.priority,
-      }).toList()}},
+    AgentTextDelta(text: final t) => {
+      'TextDelta': {'text': t},
+    },
+    AgentThinkingDelta(text: final t) => {
+      'ThinkingDelta': {'text': t},
+    },
+    AgentTextBlock(text: final t) => {
+      'TextBlock': {'text': t},
+    },
+    AgentToolUseStart(id: final i, name: final n, input: final inp) => {
+      'ToolUseStart': {'id': i, 'name': n, 'input': inp},
+    },
+    AgentToolResult(id: final i, content: final c, isError: final e) => {
+      'ToolResult': {'id': i, 'content': c, 'is_error': e},
+    },
+    AgentTurnCompleted(status: final s) => {
+      'TurnCompleted': {'status': s},
+    },
+    AgentSessionResult(
+      result: final r,
+      isError: final e,
+      durationMs: final d,
+      numTurns: final n,
+    ) =>
+      {
+        'SessionResult': {
+          'result': r,
+          'is_error': e,
+          'duration_ms': d,
+          'num_turns': n,
+        },
+      },
+    AgentPermissionRequest(
+      id: final i,
+      tool: final t,
+      title: final ti,
+      metadata: final m,
+    ) =>
+      {
+        'PermissionRequest': {'id': i, 'tool': t, 'title': ti, 'metadata': m},
+      },
+    AgentPermissionResolved(id: final i, response: final r) => {
+      'PermissionResolved': {'id': i, 'response': r},
+    },
+    AgentTodoUpdate(todos: final t) => {
+      'TodoUpdate': {
+        'todos': t
+            .map(
+              (item) => {
+                'id': item.id,
+                'content': item.content,
+                'status': item.status,
+                'priority': item.priority,
+              },
+            )
+            .toList(),
+      },
+    },
     AgentCostUpdate(
-      inputTokens: final inp, outputTokens: final out, reasoningTokens: final rea,
-      cacheReadTokens: final cr, cacheWriteTokens: final cw, costUsd: final c,
-    ) => {'CostUpdate': {
-      'input_tokens': inp, 'output_tokens': out, 'reasoning_tokens': rea,
-      'cache_read_tokens': cr, 'cache_write_tokens': cw, 'cost_usd': c,
-    }},
+      inputTokens: final inp,
+      outputTokens: final out,
+      reasoningTokens: final rea,
+      cacheReadTokens: final cr,
+      cacheWriteTokens: final cw,
+      costUsd: final c,
+    ) =>
+      {
+        'CostUpdate': {
+          'input_tokens': inp,
+          'output_tokens': out,
+          'reasoning_tokens': rea,
+          'cache_read_tokens': cr,
+          'cache_write_tokens': cw,
+          'cost_usd': c,
+        },
+      },
   };
 }
 
 Map<String, dynamic> _encodeAgentCommand(AgentCommand cmd) {
   return switch (cmd) {
-    AgentPrompt(text: final t) => {'Prompt': {'text': t}},
-    AgentApproveToolUse(id: final i) => {'ApproveToolUse': {'id': i}},
-    AgentDenyToolUse(id: final i, reason: final r) =>
-      {'DenyToolUse': {'id': i, 'reason': r}},
+    AgentPrompt(text: final t) => {
+      'Prompt': {'text': t},
+    },
+    AgentApproveToolUse(id: final i) => {
+      'ApproveToolUse': {'id': i},
+    },
+    AgentDenyToolUse(id: final i, reason: final r) => {
+      'DenyToolUse': {'id': i, 'reason': r},
+    },
     AgentAbortSession() => {'AbortSession': null},
   };
 }
@@ -650,22 +740,27 @@ SecureMessage decodeSecureMessage(Uint8List bytes) {
     final value = entry.value;
 
     return switch (key) {
-      'PtyInput'       => PtyInput(_toUint8List(value)),
-      'PtyOutput'      => PtyOutput(_toUint8List(value)),
-      'Resize'         => Resize(cols: (value as Map)['cols'] as int, rows: value['rows'] as int),
-      'Heartbeat'      => Heartbeat(),
-      'VersionNotice'  => VersionNotice((value as Map)['minimum_version'] as String),
-      'SessionEnded'   => SessionEnded((value as Map)['exit_code'] as int),
-      'Clipboard'      => ClipboardMsg((value as Map)['content'] as String),
-      'ReadOnly'       => ReadOnlyMsg((value as Map)['enabled'] as bool),
-      'VoiceCommand'   => VoiceCommand(
-                            transcript: (value as Map)['transcript'] as String,
-                            intent: value['intent'] as String?,
-                            confidence: (value['confidence'] as num).toDouble(),
-                          ),
-      'AgentEvent'     => _decodeAgentEvent(value),
-      'AgentCommand'   => _decodeAgentCommand(value),
-      _                => UnknownMessage(bytes),
+      'PtyInput' => PtyInput(_toUint8List(value)),
+      'PtyOutput' => PtyOutput(_toUint8List(value)),
+      'Resize' => Resize(
+        cols: (value as Map)['cols'] as int,
+        rows: value['rows'] as int,
+      ),
+      'Heartbeat' => Heartbeat(),
+      'VersionNotice' => VersionNotice(
+        (value as Map)['minimum_version'] as String,
+      ),
+      'SessionEnded' => SessionEnded((value as Map)['exit_code'] as int),
+      'Clipboard' => ClipboardMsg((value as Map)['content'] as String),
+      'ReadOnly' => ReadOnlyMsg((value as Map)['enabled'] as bool),
+      'VoiceCommand' => VoiceCommand(
+        transcript: (value as Map)['transcript'] as String,
+        intent: value['intent'] as String?,
+        confidence: (value['confidence'] as num).toDouble(),
+      ),
+      'AgentEvent' => _decodeAgentEvent(value),
+      'AgentCommand' => _decodeAgentCommand(value),
+      _ => UnknownMessage(bytes),
     };
   } catch (e) {
     // Forward compatibility: unrecognized data becomes Unknown.
@@ -707,7 +802,9 @@ AgentEvent _decodeAgentEvent(dynamic raw) {
       ),
       'TurnStarted' => AgentTurnStarted(),
       'TextDelta' => AgentTextDelta(text: (value as Map)['text'] as String),
-      'ThinkingDelta' => AgentThinkingDelta(text: (value as Map)['text'] as String),
+      'ThinkingDelta' => AgentThinkingDelta(
+        text: (value as Map)['text'] as String,
+      ),
       'TextBlock' => AgentTextBlock(text: (value as Map)['text'] as String),
       'ToolUseStart' => AgentToolUseStart(
         id: (value as Map)['id'] as String,
@@ -739,12 +836,16 @@ AgentEvent _decodeAgentEvent(dynamic raw) {
         response: value['response'] as String,
       ),
       'TodoUpdate' => AgentTodoUpdate(
-        todos: ((value as Map)['todos'] as List).map((t) => TodoItem(
-          id: (t as Map)['id']?.toString() ?? '',
-          content: t['content']?.toString() ?? '',
-          status: t['status']?.toString() ?? 'pending',
-          priority: t['priority']?.toString() ?? 'medium',
-        )).toList(),
+        todos: ((value as Map)['todos'] as List)
+            .map(
+              (t) => TodoItem(
+                id: (t as Map)['id']?.toString() ?? '',
+                content: t['content']?.toString() ?? '',
+                status: t['status']?.toString() ?? 'pending',
+                priority: t['priority']?.toString() ?? 'medium',
+              ),
+            )
+            .toList(),
       ),
       'CostUpdate' => AgentCostUpdate(
         inputTokens: ((value as Map)['input_tokens'] as num).toInt(),

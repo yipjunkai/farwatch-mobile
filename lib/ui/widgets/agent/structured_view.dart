@@ -46,8 +46,8 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final atBottom = _scrollController.position.maxScrollExtent -
-            _scrollController.offset <
+    final atBottom =
+        _scrollController.position.maxScrollExtent - _scrollController.offset <
         100;
     if (_showScrollFab == atBottom) {
       setState(() => _showScrollFab = !atBottom);
@@ -136,8 +136,7 @@ class _StructuredViewState extends ConsumerState<StructuredView> {
 class _ScrollToBottomButton extends StatelessWidget {
   final VoidCallback onPressed;
   final FarwatchColors colors;
-  const _ScrollToBottomButton(
-      {required this.onPressed, required this.colors});
+  const _ScrollToBottomButton({required this.onPressed, required this.colors});
 
   @override
   Widget build(BuildContext context) {
@@ -147,8 +146,11 @@ class _ScrollToBottomButton extends StatelessWidget {
         color: colors.glassSurface,
         borderRadius: BorderRadius.circular(20),
         onPressed: onPressed,
-        child: Icon(CupertinoIcons.chevron_down,
-            size: 18, color: colors.textSecondary),
+        child: Icon(
+          CupertinoIcons.chevron_down,
+          size: 18,
+          color: colors.textSecondary,
+        ),
       );
     }
     return FloatingActionButton.small(
@@ -207,22 +209,25 @@ class _EmptyAgentState extends ConsumerWidget {
             Text(
               'Connected to ${ts.toolName ?? "agent"}',
               style: TextStyle(
-                  color: c.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500),
+                color: c.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Type a prompt below or use the desktop terminal.\n'
               'Activity will appear here as the agent works.',
               textAlign: TextAlign.center,
-              style:
-                  TextStyle(color: c.textTertiary, fontSize: 13, height: 1.5),
+              style: TextStyle(
+                color: c.textTertiary,
+                fontSize: 13,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 16),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: c.infoSurface,
                 borderRadius: BorderRadius.circular(8),

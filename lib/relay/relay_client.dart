@@ -81,9 +81,9 @@ class RelayClient extends ChangeNotifier {
     required String relayUrl,
     String? apiKey,
     ReconnectConfig reconnectConfig = const ReconnectConfig(),
-  })  : _relayUrl = relayUrl,
-        _apiKey = apiKey,
-        _reconnectConfig = reconnectConfig;
+  }) : _relayUrl = relayUrl,
+       _apiKey = apiKey,
+       _reconnectConfig = reconnectConfig;
 
   void _setState(RelayConnectionState s) {
     if (_disposed) return;
@@ -112,16 +112,16 @@ class RelayClient extends ChangeNotifier {
       var wsUrl = Uri.parse(_relayUrl);
       // Append API key as query parameter if available.
       if (_apiKey != null) {
-        wsUrl = wsUrl.replace(queryParameters: {
-          ...wsUrl.queryParameters,
-          'api_key': _apiKey,
-        });
+        wsUrl = wsUrl.replace(
+          queryParameters: {...wsUrl.queryParameters, 'api_key': _apiKey},
+        );
       }
       // Use IOWebSocketChannel for transport-level ping/pong.
       // pingInterval keeps the TCP connection alive through mobile
       // networks and proxies that kill idle connections.
-      final rawSocket = await WebSocket.connect(wsUrl.toString())
-          .timeout(const Duration(seconds: 15));
+      final rawSocket = await WebSocket.connect(
+        wsUrl.toString(),
+      ).timeout(const Duration(seconds: 15));
       rawSocket.pingInterval = const Duration(seconds: 15);
       _channel = IOWebSocketChannel(rawSocket);
 
@@ -179,8 +179,9 @@ class RelayClient extends ChangeNotifier {
       _rawSend(encodeRelay(RelayRegister(request)));
 
       // Wait for Registered
-      _registered = await registeredCompleter.future
-          .timeout(const Duration(seconds: 15));
+      _registered = await registeredCompleter.future.timeout(
+        const Duration(seconds: 15),
+      );
 
       _reconnectAttempt = 0;
       _setState(RelayConnectionState.connected);
@@ -223,8 +224,10 @@ class RelayClient extends ChangeNotifier {
     _setState(RelayConnectionState.reconnecting);
     final delay = _reconnectConfig.delayForAttempt(_reconnectAttempt);
     _reconnectAttempt++;
-    log('[relay] reconnecting in ${delay.inMilliseconds}ms '
-        '(attempt $_reconnectAttempt/${_reconnectConfig.maxAttempts})');
+    log(
+      '[relay] reconnecting in ${delay.inMilliseconds}ms '
+      '(attempt $_reconnectAttempt/${_reconnectConfig.maxAttempts})',
+    );
 
     Future.delayed(delay, () {
       if (!_disposed && !_intentionalClose && _lastRequest != null) {

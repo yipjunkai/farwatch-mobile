@@ -46,7 +46,9 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
 
     // Send the answer as a prompt (the response format OpenCode expects).
     final answerText = labels.join(', ');
-    ref.read(terminalSessionProvider(widget.pairing).notifier).sendAgentPrompt(answerText);
+    ref
+        .read(terminalSessionProvider(widget.pairing).notifier)
+        .sendAgentPrompt(answerText);
 
     // Mark the question as resolved in state.
     ref.read(agentStateProvider.notifier).resolveQuestion(toolId, labels);
@@ -93,39 +95,45 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header
-        Row(children: [
-          Icon(
-            isResolved ? Icons.check_circle_outline : Icons.help_outline,
-            color: isResolved ? c.textTertiary : c.questionAccent,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              question.header,
-              style: TextStyle(
-                color: isResolved ? c.textTertiary : c.questionAccent,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+        Row(
+          children: [
+            Icon(
+              isResolved ? Icons.check_circle_outline : Icons.help_outline,
+              color: isResolved ? c.textTertiary : c.questionAccent,
+              size: 16,
             ),
-          ),
-          if (isResolved && answeredLabels != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: c.allowedBadge,
-                borderRadius: BorderRadius.circular(4),
-              ),
+            const SizedBox(width: 8),
+            Expanded(
               child: Text(
-                answeredLabels.join(', '),
-                style: TextStyle(color: c.approveText, fontSize: 10, fontWeight: FontWeight.w500),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                question.header,
+                style: TextStyle(
+                  color: isResolved ? c.textTertiary : c.questionAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
             ),
+            if (isResolved && answeredLabels != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: c.allowedBadge,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  answeredLabels.join(', '),
+                  style: TextStyle(
+                    color: c.approveText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ],
-        ]),
+        ),
         const SizedBox(height: 8),
 
         // Question text
@@ -199,71 +207,82 @@ class _BinaryButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isApplePlatform) {
-      return Row(children: [
+      return Row(
+        children: [
+          for (int i = 0; i < options.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            Expanded(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                color: i == 0
+                    ? colors.questionPrimaryButton
+                    : colors.questionSecondaryButton,
+                borderRadius: BorderRadius.circular(8),
+                onPressed: () => onSelect(options[i].label),
+                child: Column(
+                  children: [
+                    Text(
+                      options[i].label,
+                      style: TextStyle(
+                        color: i == 0
+                            ? colors.textPrimary
+                            : colors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (options[i].description.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        options[i].description,
+                        style: TextStyle(
+                          color: colors.textTertiary,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    return Row(
+      children: [
         for (int i = 0; i < options.length; i++) ...[
           if (i > 0) const SizedBox(width: 10),
           Expanded(
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              color: i == 0 ? colors.questionPrimaryButton : colors.questionSecondaryButton,
-              borderRadius: BorderRadius.circular(8),
-              onPressed: () => onSelect(options[i].label),
-              child: Column(
-                children: [
-                  Text(
-                    options[i].label,
-                    style: TextStyle(
-                      color: i == 0 ? colors.textPrimary : colors.textSecondary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+            child: SizedBox(
+              height: options[i].description.isNotEmpty ? 56 : 40,
+              child: i == 0
+                  ? ElevatedButton(
+                      onPressed: () => onSelect(options[i].label),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.questionPrimaryButton,
+                        foregroundColor: colors.textPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      child: _ButtonContent(option: options[i], colors: colors),
+                    )
+                  : OutlinedButton(
+                      onPressed: () => onSelect(options[i].label),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colors.textSecondary,
+                        side: BorderSide(color: colors.questionSecondaryButton),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      child: _ButtonContent(option: options[i], colors: colors),
                     ),
-                  ),
-                  if (options[i].description.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      options[i].description,
-                      style: TextStyle(color: colors.textTertiary, fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
             ),
           ),
         ],
-      ]);
-    }
-
-    return Row(children: [
-      for (int i = 0; i < options.length; i++) ...[
-        if (i > 0) const SizedBox(width: 10),
-        Expanded(
-          child: SizedBox(
-            height: options[i].description.isNotEmpty ? 56 : 40,
-            child: i == 0
-                ? ElevatedButton(
-                    onPressed: () => onSelect(options[i].label),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.questionPrimaryButton,
-                      foregroundColor: colors.textPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                    ),
-                    child: _ButtonContent(option: options[i], colors: colors),
-                  )
-                : OutlinedButton(
-                    onPressed: () => onSelect(options[i].label),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colors.textSecondary,
-                      side: BorderSide(color: colors.questionSecondaryButton),
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                    ),
-                    child: _ButtonContent(option: options[i], colors: colors),
-                  ),
-          ),
-        ),
       ],
-    ]);
+    );
   }
 }
 
@@ -277,7 +296,10 @@ class _ButtonContent extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(option.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(
+          option.label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
         if (option.description.isNotEmpty)
           Text(
             option.description,
@@ -453,34 +475,39 @@ class _OptionTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: colors.questionOptionBorder),
         ),
-        child: Row(children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  option.label,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (option.description.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    option.description,
-                    style: TextStyle(color: colors.textTertiary, fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    option.label,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
+                  if (option.description.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      option.description,
+                      style: TextStyle(
+                        color: colors.textTertiary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          trailing,
-        ]),
+            const SizedBox(width: 8),
+            trailing,
+          ],
+        ),
       ),
     );
   }
@@ -503,79 +530,101 @@ class _CustomAnswerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Expanded(
-        child: isApplePlatform
-            ? CupertinoTextField(
-                controller: controller,
-                placeholder: 'Type a custom answer...',
-                placeholderStyle: TextStyle(color: colors.textPlaceholder, fontSize: 12),
-                style: TextStyle(color: colors.textPrimary, fontSize: 13),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colors.inputBackground,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (text) {
-                  if (text.trim().isNotEmpty) onSubmit(text.trim());
-                },
-              )
-            : TextField(
-                controller: controller,
-                style: TextStyle(color: colors.textPrimary, fontSize: 13),
-                decoration: InputDecoration(
-                  hintText: 'Type a custom answer...',
-                  hintStyle: TextStyle(color: colors.textPlaceholder, fontSize: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: colors.surfaceTertiary),
+    return Row(
+      children: [
+        Expanded(
+          child: isApplePlatform
+              ? CupertinoTextField(
+                  controller: controller,
+                  placeholder: 'Type a custom answer...',
+                  placeholderStyle: TextStyle(
+                    color: colors.textPlaceholder,
+                    fontSize: 12,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: colors.surfaceTertiary),
+                  style: TextStyle(color: colors.textPrimary, fontSize: 13),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  isDense: true,
+                  decoration: BoxDecoration(
+                    color: colors.inputBackground,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (text) {
+                    if (text.trim().isNotEmpty) onSubmit(text.trim());
+                  },
+                )
+              : TextField(
+                  controller: controller,
+                  style: TextStyle(color: colors.textPrimary, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Type a custom answer...',
+                    hintStyle: TextStyle(
+                      color: colors.textPlaceholder,
+                      fontSize: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: colors.surfaceTertiary),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: colors.surfaceTertiary),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    isDense: true,
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (text) {
+                    if (text.trim().isNotEmpty) onSubmit(text.trim());
+                  },
                 ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (text) {
-                  if (text.trim().isNotEmpty) onSubmit(text.trim());
-                },
-              ),
-      ),
-      const SizedBox(width: 8),
-      SizedBox(
-        width: 32,
-        height: 32,
-        child: isApplePlatform
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                color: colors.questionAccent,
-                borderRadius: BorderRadius.circular(16),
-                onPressed: () {
-                  final text = controller.text.trim();
-                  if (text.isNotEmpty) onSubmit(text);
-                },
-                child: Icon(CupertinoIcons.arrow_up, size: 16, color: colors.background),
-              )
-            : Material(
-                color: colors.questionAccent,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () {
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: isApplePlatform
+              ? CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  color: colors.questionAccent,
+                  borderRadius: BorderRadius.circular(16),
+                  onPressed: () {
                     final text = controller.text.trim();
                     if (text.isNotEmpty) onSubmit(text);
                   },
-                  child: Center(
-                    child: Icon(Icons.arrow_upward, size: 16, color: colors.background),
+                  child: Icon(
+                    CupertinoIcons.arrow_up,
+                    size: 16,
+                    color: colors.background,
+                  ),
+                )
+              : Material(
+                  color: colors.questionAccent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      final text = controller.text.trim();
+                      if (text.isNotEmpty) onSubmit(text);
+                    },
+                    child: Center(
+                      child: Icon(
+                        Icons.arrow_upward,
+                        size: 16,
+                        color: colors.background,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-      ),
-    ]);
+        ),
+      ],
+    );
   }
 }
 
@@ -599,14 +648,18 @@ class _FallbackCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: colors.toolCallBorder),
         ),
-        child: Row(children: [
-          Icon(Icons.help_outline, color: colors.toolCallAccent, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text,
-                style: TextStyle(color: colors.textPrimary, fontSize: 13)),
-          ),
-        ]),
+        child: Row(
+          children: [
+            Icon(Icons.help_outline, color: colors.toolCallAccent, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(color: colors.textPrimary, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

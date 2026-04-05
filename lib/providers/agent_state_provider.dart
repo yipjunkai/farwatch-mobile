@@ -77,8 +77,8 @@ class AgentState {
 /// the terminal screen is popped.
 final agentStateProvider =
     NotifierProvider.autoDispose<AgentStateNotifier, AgentState>(
-  AgentStateNotifier.new,
-);
+      AgentStateNotifier.new,
+    );
 
 class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
   int _nextId = 0;
@@ -97,20 +97,19 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
 
   /// Set the structured view visible and mark that events have arrived.
   void enableStructuredView() {
-    state = state.copyWith(
-      hasStructuredEvents: true,
-      showStructuredView: true,
-    );
+    state = state.copyWith(hasStructuredEvents: true, showStructuredView: true);
   }
 
   /// Add a user prompt message to the chat history (called before sending).
   void addUserPrompt(String text) {
     final messages = List<AgentMessage>.of(state.messages);
-    messages.add(AgentMessage(
-      id: _nextId++,
-      type: AgentMessageType.userPrompt,
-      text: text,
-    ));
+    messages.add(
+      AgentMessage(
+        id: _nextId++,
+        type: AgentMessageType.userPrompt,
+        text: text,
+      ),
+    );
     state = state.copyWith(messages: messages);
   }
 
@@ -140,11 +139,13 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         _seenModels.add(modelKey);
 
         final messages = List<AgentMessage>.of(state.messages);
-        messages.add(AgentMessage(
-          id: _nextId++,
-          type: AgentMessageType.system,
-          text: 'Model: $model\nTools: ${tools.join(", ")}',
-        ));
+        messages.add(
+          AgentMessage(
+            id: _nextId++,
+            type: AgentMessageType.system,
+            text: 'Model: $model\nTools: ${tools.join(", ")}',
+          ),
+        );
         state = state.copyWith(
           messages: messages,
           hasStructuredEvents: true,
@@ -154,11 +155,13 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
 
       case AgentTurnStarted():
         final messages = List<AgentMessage>.of(state.messages);
-        messages.add(AgentMessage(
-          id: _nextId++,
-          type: AgentMessageType.turnMarker,
-          text: 'Turn started...',
-        ));
+        messages.add(
+          AgentMessage(
+            id: _nextId++,
+            type: AgentMessageType.turnMarker,
+            text: 'Turn started...',
+          ),
+        );
         state = state.copyWith(
           messages: messages,
           agentBusy: true,
@@ -172,11 +175,13 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
             messages.last.type == AgentMessageType.text) {
           messages.last.text += text;
         } else {
-          messages.add(AgentMessage(
-            id: _nextId++,
-            type: AgentMessageType.text,
-            text: text,
-          ));
+          messages.add(
+            AgentMessage(
+              id: _nextId++,
+              type: AgentMessageType.text,
+              text: text,
+            ),
+          );
         }
         state = state.copyWith(messages: messages, agentTyping: false);
         return null;
@@ -191,11 +196,13 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
           // Replace: TextBlock is the full content, not a delta.
           messages.last.text = text;
         } else {
-          messages.add(AgentMessage(
-            id: _nextId++,
-            type: AgentMessageType.text,
-            text: text,
-          ));
+          messages.add(
+            AgentMessage(
+              id: _nextId++,
+              type: AgentMessageType.text,
+              text: text,
+            ),
+          );
         }
         state = state.copyWith(messages: messages, agentTyping: false);
         return null;
@@ -206,38 +213,47 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
             messages.last.type == AgentMessageType.thinking) {
           messages.last.text += text;
         } else {
-          messages.add(AgentMessage(
-            id: _nextId++,
-            type: AgentMessageType.thinking,
-            text: text,
-          ));
+          messages.add(
+            AgentMessage(
+              id: _nextId++,
+              type: AgentMessageType.thinking,
+              text: text,
+            ),
+          );
         }
         state = state.copyWith(messages: messages, agentTyping: false);
         return null;
 
-      case AgentToolUseStart(id: final id, name: final name, input: final input):
+      case AgentToolUseStart(
+        id: final id,
+        name: final name,
+        input: final input,
+      ):
         // Intercept mcp_question tool calls → render as native question UI.
         if (name == 'mcp_question') {
           return _handleQuestionTool(id, input);
         }
         final messages = List<AgentMessage>.of(state.messages);
-        messages.add(AgentMessage(
-          id: _nextId++,
-          type: AgentMessageType.toolCall,
-          text: name,
-          toolId: id,
-          toolInput: input,
-          toolName: name,
-          toolRunning: true,
-          toolStartedAt: DateTime.now(),
-        ));
+        messages.add(
+          AgentMessage(
+            id: _nextId++,
+            type: AgentMessageType.toolCall,
+            text: name,
+            toolId: id,
+            toolInput: input,
+            toolName: name,
+            toolRunning: true,
+            toolStartedAt: DateTime.now(),
+          ),
+        );
         state = state.copyWith(messages: messages, agentTyping: false);
         return null;
 
       case AgentToolResult(
-          id: final id,
-          content: final result,
-          isError: final isError):
+        id: final id,
+        content: final result,
+        isError: final isError,
+      ):
         final messages = List<AgentMessage>.of(state.messages);
         // Find the matching toolCall message and attach the result inline.
         final matchIdx = messages.lastIndexWhere(
@@ -249,12 +265,16 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
           messages[matchIdx].toolIsError = isError;
         } else {
           // No matching tool call found — append as a standalone result.
-          messages.add(AgentMessage(
-            id: _nextId++,
-            type: isError ? AgentMessageType.toolError : AgentMessageType.toolResult,
-            text: result,
-            toolId: id,
-          ));
+          messages.add(
+            AgentMessage(
+              id: _nextId++,
+              type: isError
+                  ? AgentMessageType.toolError
+                  : AgentMessageType.toolResult,
+              text: result,
+              toolId: id,
+            ),
+          );
         }
         state = state.copyWith(messages: messages);
         return null;
@@ -265,28 +285,37 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
 
       case AgentSessionResult(result: final result, isError: final isError):
         final messages = List<AgentMessage>.of(state.messages);
-        messages.add(AgentMessage(
-          id: _nextId++,
-          type: isError ? AgentMessageType.toolError : AgentMessageType.text,
-          text: result,
-        ));
-        state = state.copyWith(messages: messages, agentBusy: false, agentTyping: false);
+        messages.add(
+          AgentMessage(
+            id: _nextId++,
+            type: isError ? AgentMessageType.toolError : AgentMessageType.text,
+            text: result,
+          ),
+        );
+        state = state.copyWith(
+          messages: messages,
+          agentBusy: false,
+          agentTyping: false,
+        );
         return null;
 
       case AgentPermissionRequest(
-          id: final id,
-          tool: final name,
-          title: final desc,
-          metadata: final input):
+        id: final id,
+        tool: final name,
+        title: final desc,
+        metadata: final input,
+      ):
         final messages = List<AgentMessage>.of(state.messages);
-        messages.add(AgentMessage(
-          id: _nextId++,
-          type: AgentMessageType.permissionRequest,
-          text: desc,
-          toolId: id,
-          toolInput: input,
-          toolName: name,
-        ));
+        messages.add(
+          AgentMessage(
+            id: _nextId++,
+            type: AgentMessageType.permissionRequest,
+            text: desc,
+            toolId: id,
+            toolInput: input,
+            toolName: name,
+          ),
+        );
         final perms = Map<String, String?>.of(state.pendingPermissions);
         perms[id] = null;
         state = state.copyWith(
@@ -303,9 +332,10 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         return null;
 
       case AgentCostUpdate(
-          costUsd: final cost,
-          inputTokens: final input,
-          outputTokens: final output):
+        costUsd: final cost,
+        inputTokens: final input,
+        outputTokens: final output,
+      ):
         state = state.copyWith(
           costUsd: cost,
           inputTokens: input,
@@ -332,27 +362,31 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
     } catch (_) {
       // Malformed question input — fall back to generic tool card.
       final messages = List<AgentMessage>.of(state.messages);
-      messages.add(AgentMessage(
-        id: _nextId++,
-        type: AgentMessageType.toolCall,
-        text: 'mcp_question',
-        toolId: toolId,
-        toolInput: inputJson,
-      ));
+      messages.add(
+        AgentMessage(
+          id: _nextId++,
+          type: AgentMessageType.toolCall,
+          text: 'mcp_question',
+          toolId: toolId,
+          toolInput: inputJson,
+        ),
+      );
       state = state.copyWith(messages: messages, agentTyping: false);
       return null;
     }
 
     final messages = List<AgentMessage>.of(state.messages);
-    messages.add(AgentMessage(
-      id: _nextId++,
-      type: AgentMessageType.questionRequest,
-      text: questionData.questions.isNotEmpty
-          ? questionData.questions.first.question
-          : 'Question',
-      toolId: toolId,
-      questionData: questionData,
-    ));
+    messages.add(
+      AgentMessage(
+        id: _nextId++,
+        type: AgentMessageType.questionRequest,
+        text: questionData.questions.isNotEmpty
+            ? questionData.questions.first.question
+            : 'Question',
+        toolId: toolId,
+        questionData: questionData,
+      ),
+    );
 
     final questions = Map<String, List<String>?>.of(state.pendingQuestions);
     questions[toolId] = null; // null = unanswered

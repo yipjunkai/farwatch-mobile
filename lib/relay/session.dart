@@ -54,6 +54,7 @@ class RelaySession extends ChangeNotifier {
   String? get error => _error;
   String? _toolName;
   String? get toolName => _toolName;
+
   /// Whether the connected host tool supports structured agent events.
   bool get isStructuredTool => _toolName == 'claude';
   bool _disposed = false;
@@ -98,7 +99,8 @@ class RelaySession extends ChangeNotifier {
     _state = s;
 
     // Manage handshake timeout
-    if (s == SessionState.handshaking || s == SessionState.awaitingConfirm ||
+    if (s == SessionState.handshaking ||
+        s == SessionState.awaitingConfirm ||
         s == SessionState.waitingForPeer) {
       _startHandshakeTimer();
     } else {
@@ -175,14 +177,16 @@ class RelaySession extends ChangeNotifier {
       _cachedClientVersion ??= (await PackageInfo.fromPlatform()).version;
 
       // Connect and register
-      await _client!.connect(RegisterRequest(
-        protocolVersion: protocolVersion,
-        protocolVersionMin: protocolVersionMin,
-        clientVersion: _cachedClientVersion!,
-        sessionId: pairing.sessionId,
-        pairingCode: pairing.pairingCode,
-        role: PeerRole.client,
-      ));
+      await _client!.connect(
+        RegisterRequest(
+          protocolVersion: protocolVersion,
+          protocolVersionMin: protocolVersionMin,
+          clientVersion: _cachedClientVersion!,
+          sessionId: pairing.sessionId,
+          pairingCode: pairing.pairingCode,
+          role: PeerRole.client,
+        ),
+      );
     } catch (e) {
       _setError(e.toString());
     }
@@ -194,7 +198,9 @@ class RelaySession extends ChangeNotifier {
 
   void _onRelayConnected() {
     if (_disposed) return;
-    log('[session] relay connected, peer_online=${_client?.registered?.peerOnline}');
+    log(
+      '[session] relay connected, peer_online=${_client?.registered?.peerOnline}',
+    );
 
     // Reset handshake state on every new connection
     _channel = null;
@@ -247,7 +253,11 @@ class RelaySession extends ChangeNotifier {
       case RelayErrorMsg(error: final err):
         _setError(err.message);
 
-      case RelayPing() || RelayPong() || RelayRegistered() || RelayRegister() || RelayUnknown():
+      case RelayPing() ||
+          RelayPong() ||
+          RelayRegistered() ||
+          RelayRegister() ||
+          RelayUnknown():
         break;
     }
   }
@@ -318,27 +328,33 @@ class RelaySession extends ChangeNotifier {
     log('[session] sending handshake');
     _client?.sendPeerFrame(
       pairing.sessionId,
-      PeerFrameHandshake(Handshake(
-        publicKey: _localKey!.public_,
-        fingerprint: _localFingerprint!,
-        toolName: 'farwatch-app',
-        timestampMs: DateTime.now().millisecondsSinceEpoch,
-      )),
+      PeerFrameHandshake(
+        Handshake(
+          publicKey: _localKey!.public_,
+          fingerprint: _localFingerprint!,
+          toolName: 'farwatch-app',
+          timestampMs: DateTime.now().millisecondsSinceEpoch,
+        ),
+      ),
     );
   }
 
   Future<void> _onPeerHandshake(Handshake handshake) async {
-    log('[session] peer handshake: fp=${handshake.fingerprint} '
-        'tool=${handshake.toolName} key_len=${handshake.publicKey.length}');
+    log(
+      '[session] peer handshake: fp=${handshake.fingerprint} '
+      'tool=${handshake.toolName} key_len=${handshake.publicKey.length}',
+    );
 
     // Ignore duplicate handshakes if we already have a channel (in-progress
     // or confirmed) or if we're currently processing one. This handles the
     // dual-handshake race where both sides send Handshake simultaneously —
     // the first one processed wins, and the second is safely dropped.
     if (_channel != null || _processingHandshake) {
-      log('[session] ignoring duplicate handshake '
-          '(channel=${_channel != null}, processing=$_processingHandshake, '
-          'state=$_state)');
+      log(
+        '[session] ignoring duplicate handshake '
+        '(channel=${_channel != null}, processing=$_processingHandshake, '
+        'state=$_state)',
+      );
       return;
     }
 
@@ -353,8 +369,10 @@ class RelaySession extends ChangeNotifier {
     // Validate fingerprint
     if (pairing.expectedFingerprint != null &&
         handshake.fingerprint != pairing.expectedFingerprint) {
-      _setError('Fingerprint mismatch: expected ${pairing.expectedFingerprint}, '
-          'got ${handshake.fingerprint}');
+      _setError(
+        'Fingerprint mismatch: expected ${pairing.expectedFingerprint}, '
+        'got ${handshake.fingerprint}',
+      );
       return;
     }
 
@@ -456,7 +474,12 @@ class RelaySession extends ChangeNotifier {
         case AgentEvent():
           _eventController.add(msg);
 
-        case PtyInput() || Resize() || Heartbeat() || VoiceCommand() || AgentCommand() || UnknownMessage():
+        case PtyInput() ||
+            Resize() ||
+            Heartbeat() ||
+            VoiceCommand() ||
+            AgentCommand() ||
+            UnknownMessage():
           break;
       }
     } catch (e) {
@@ -488,12 +511,13 @@ class RelaySession extends ChangeNotifier {
     required String transcript,
     String? intent,
     required double confidence,
-  }) =>
-      _sendSecure(VoiceCommand(
-        transcript: transcript,
-        intent: intent,
-        confidence: confidence,
-      ));
+  }) => _sendSecure(
+    VoiceCommand(
+      transcript: transcript,
+      intent: intent,
+      confidence: confidence,
+    ),
+  );
 
   Future<void> sendAgentPrompt(String text) =>
       _sendSecure(AgentPrompt(text: text));
@@ -532,7 +556,9 @@ class RelaySession extends ChangeNotifier {
 
   Future<void> disconnect() async {
     // Send goodbye if we have an active channel
-    if (_state == SessionState.connected && _channel != null && _client != null) {
+    if (_state == SessionState.connected &&
+        _channel != null &&
+        _client != null) {
       try {
         final sealed = await _channel!.seal(SessionEnded(0));
         _client!.sendPeerFrame(pairing.sessionId, PeerFrameSecure(sealed));

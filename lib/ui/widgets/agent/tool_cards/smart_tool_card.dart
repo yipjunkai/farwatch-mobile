@@ -55,7 +55,11 @@ class SmartToolCard extends StatelessWidget {
         'mcp_write' => _WriteCard(message: message, input: input, colors: c),
         'mcp_glob' => _GlobCard(message: message, input: input, colors: c),
         'mcp_grep' => _GrepCard(message: message, input: input, colors: c),
-        'mcp_webfetch' => _WebFetchCard(message: message, input: input, colors: c),
+        'mcp_webfetch' => _WebFetchCard(
+          message: message,
+          input: input,
+          colors: c,
+        ),
         _ => _GenericToolCard(message: message, input: input, colors: c),
       },
     );
@@ -78,7 +82,10 @@ class SmartToolCard extends StatelessWidget {
 
   /// Builds the tool-specific header content (before result).
   static Widget _toolHeaderContent(
-      String toolName, ToolInputParser input, FarwatchColors c) {
+    String toolName,
+    ToolInputParser input,
+    FarwatchColors c,
+  ) {
     return switch (toolName) {
       'mcp_bash' => _bashHeader(input, c),
       'mcp_read' => _filePathHeader(input.filePath, 'Read', c),
@@ -98,8 +105,7 @@ class SmartToolCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (desc != null && desc.isNotEmpty)
-          Text(desc,
-              style: TextStyle(color: c.textSecondary, fontSize: 12)),
+          Text(desc, style: TextStyle(color: c.textSecondary, fontSize: 12)),
         if (cmd != null && cmd.isNotEmpty) ...[
           if (desc != null && desc.isNotEmpty) const SizedBox(height: 4),
           Container(
@@ -125,86 +131,111 @@ class SmartToolCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             input.workdir!,
-            style: TextStyle(color: c.textPlaceholder, fontSize: 10, fontFamily: 'monospace'),
+            style: TextStyle(
+              color: c.textPlaceholder,
+              fontSize: 10,
+              fontFamily: 'monospace',
+            ),
           ),
         ],
       ],
     );
   }
 
-  static Widget _filePathHeader(
-      String? path, String action, FarwatchColors c) {
+  static Widget _filePathHeader(String? path, String action, FarwatchColors c) {
     if (path == null) return const SizedBox.shrink();
     final fileName = path.split('/').last;
-    final dirPath =
-        path.contains('/') ? path.substring(0, path.lastIndexOf('/') + 1) : '';
-    return Row(children: [
-      Icon(Icons.insert_drive_file_outlined,
-          size: 14, color: c.toolCallAccent),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Text.rich(
-          TextSpan(children: [
-            if (dirPath.isNotEmpty)
-              TextSpan(
-                  text: dirPath,
-                  style: TextStyle(
+    final dirPath = path.contains('/')
+        ? path.substring(0, path.lastIndexOf('/') + 1)
+        : '';
+    return Row(
+      children: [
+        Icon(
+          Icons.insert_drive_file_outlined,
+          size: 14,
+          color: c.toolCallAccent,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                if (dirPath.isNotEmpty)
+                  TextSpan(
+                    text: dirPath,
+                    style: TextStyle(
                       color: c.textPlaceholder,
                       fontSize: 12,
-                      fontFamily: 'monospace')),
-            TextSpan(
-                text: fileName,
-                style: TextStyle(
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                TextSpan(
+                  text: fileName,
+                  style: TextStyle(
                     color: c.textPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'monospace')),
-          ]),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    ]);
-  }
-
-  static Widget _patternHeader(
-      String? pattern, String label, IconData icon, FarwatchColors c) {
-    return Row(children: [
-      Icon(icon, size: 14, color: c.toolCallAccent),
-      const SizedBox(width: 6),
-      if (pattern != null)
-        Expanded(
-          child: Text(
-            pattern,
-            style: TextStyle(
-                color: c.textPrimary,
-                fontSize: 12,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w500),
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-    ]);
+      ],
+    );
+  }
+
+  static Widget _patternHeader(
+    String? pattern,
+    String label,
+    IconData icon,
+    FarwatchColors c,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: c.toolCallAccent),
+        const SizedBox(width: 6),
+        if (pattern != null)
+          Expanded(
+            child: Text(
+              pattern,
+              style: TextStyle(
+                color: c.textPrimary,
+                fontSize: 12,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
   }
 
   static Widget _urlHeader(String? url, FarwatchColors c) {
     if (url == null) return const SizedBox.shrink();
-    return Row(children: [
-      Icon(Icons.language, size: 14, color: c.toolCallAccent),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Text(
-          url,
-          style: TextStyle(
+    return Row(
+      children: [
+        Icon(Icons.language, size: 14, color: c.toolCallAccent),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            url,
+            style: TextStyle(
               color: c.accent,
               fontSize: 12,
-              decoration: TextDecoration.underline),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+              decoration: TextDecoration.underline,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -237,18 +268,20 @@ class _SmartToolWrapper extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(icon, color: colors.toolCallAccent, size: 16),
-            const SizedBox(width: 6),
-            Text(
-              _displayName(toolName),
-              style: TextStyle(
-                color: colors.toolCallAccent,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
+          Row(
+            children: [
+              Icon(icon, color: colors.toolCallAccent, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                _displayName(toolName),
+                style: TextStyle(
+                  color: colors.toolCallAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           const SizedBox(height: 6),
           child,
         ],
@@ -298,8 +331,7 @@ class _ExpandableResult extends StatefulWidget {
 class _ExpandableResultState extends State<_ExpandableResult> {
   bool _expanded = false;
 
-  bool get _isLong =>
-      (widget.result?.length ?? 0) > widget.collapsedMaxChars;
+  bool get _isLong => (widget.result?.length ?? 0) > widget.collapsedMaxChars;
 
   @override
   Widget build(BuildContext context) {
@@ -335,8 +367,11 @@ class _ExpandableResultState extends State<_ExpandableResult> {
                   if (widget.isError)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
-                      child: Icon(Icons.error_outline,
-                          size: 13, color: widget.colors.statusErrorAccent),
+                      child: Icon(
+                        Icons.error_outline,
+                        size: 13,
+                        color: widget.colors.statusErrorAccent,
+                      ),
                     ),
                   Expanded(
                     child: Text(
@@ -484,9 +519,10 @@ class _ReadCard extends StatelessWidget {
                 if (input.limit != null) 'limit: ${input.limit}',
               ].join(', '),
               style: TextStyle(
-                  color: colors.textPlaceholder,
-                  fontSize: 10,
-                  fontFamily: 'monospace'),
+                color: colors.textPlaceholder,
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
             ),
           ],
           _ExpandableResult(
@@ -535,8 +571,10 @@ class _EditCard extends StatelessWidget {
                 color: colors.infoSurface,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text('Replace All',
-                  style: TextStyle(color: colors.infoAccent, fontSize: 10)),
+              child: Text(
+                'Replace All',
+                style: TextStyle(color: colors.infoAccent, fontSize: 10),
+              ),
             ),
           ],
           // Show old → new as a mini diff.
@@ -567,11 +605,7 @@ class _DiffBlock extends StatelessWidget {
   final String? newText;
   final FarwatchColors colors;
 
-  const _DiffBlock({
-    required this.oldText,
-    this.newText,
-    required this.colors,
-  });
+  const _DiffBlock({required this.oldText, this.newText, required this.colors});
 
   @override
   Widget build(BuildContext context) {
@@ -581,10 +615,16 @@ class _DiffBlock extends StatelessWidget {
     // Truncate for display.
     const maxLines = 6;
     final showOld = oldLines.length > maxLines
-        ? [...oldLines.take(maxLines), '... +${oldLines.length - maxLines} more']
+        ? [
+            ...oldLines.take(maxLines),
+            '... +${oldLines.length - maxLines} more',
+          ]
         : oldLines;
     final showNew = newLines.length > maxLines
-        ? [...newLines.take(maxLines), '... +${newLines.length - maxLines} more']
+        ? [
+            ...newLines.take(maxLines),
+            '... +${newLines.length - maxLines} more',
+          ]
         : newLines;
 
     return Container(
@@ -611,8 +651,9 @@ class _DiffBlock extends StatelessWidget {
             ),
           if (showNew.isNotEmpty) ...[
             SizedBox(
-                height: 2,
-                child: Divider(color: colors.surfaceTertiary, height: 1)),
+              height: 2,
+              child: Divider(color: colors.surfaceTertiary, height: 1),
+            ),
             for (final line in showNew)
               Text(
                 '+ $line',
@@ -655,35 +696,41 @@ class _WriteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(Icons.insert_drive_file_outlined,
-                size: 14, color: colors.toolCallAccent),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                input.filePath ?? 'unknown',
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'monospace',
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Icon(
+                Icons.insert_drive_file_outlined,
+                size: 14,
+                color: colors.toolCallAccent,
               ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: colors.statusConnected.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text('New',
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  input.filePath ?? 'unknown',
                   style: TextStyle(
-                      color: colors.statusConnected, fontSize: 10)),
-            ),
-          ]),
+                    color: colors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colors.statusConnected.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'New',
+                  style: TextStyle(color: colors.statusConnected, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
           if (input.content != null) ...[
             const SizedBox(height: 6),
             Container(
@@ -747,15 +794,20 @@ class _GlobCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SmartToolCard._patternHeader(
-              input.pattern, 'Glob', Icons.folder_open, colors),
+            input.pattern,
+            'Glob',
+            Icons.folder_open,
+            colors,
+          ),
           if (input.path != null) ...[
             const SizedBox(height: 2),
             Text(
               'in ${input.path}',
               style: TextStyle(
-                  color: colors.textPlaceholder,
-                  fontSize: 10,
-                  fontFamily: 'monospace'),
+                color: colors.textPlaceholder,
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
             ),
           ],
           _fileListResult(message.toolResult, colors),
@@ -790,15 +842,20 @@ class _GrepCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SmartToolCard._patternHeader(
-              input.pattern, 'Grep', Icons.search, colors),
+            input.pattern,
+            'Grep',
+            Icons.search,
+            colors,
+          ),
           if (input.include != null) ...[
             const SizedBox(height: 2),
             Text(
               'include: ${input.include}',
               style: TextStyle(
-                  color: colors.textPlaceholder,
-                  fontSize: 10,
-                  fontFamily: 'monospace'),
+                color: colors.textPlaceholder,
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
             ),
           ],
           _fileListResult(message.toolResult, colors),
@@ -824,25 +881,30 @@ Widget _fileListResult(String? result, FarwatchColors colors) {
       for (final line in displayLines)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 1),
-          child: Row(children: [
-            Icon(
-              line.endsWith('/') ? Icons.folder : Icons.insert_drive_file_outlined,
-              size: 12,
-              color: colors.textPlaceholder,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                line,
-                style: TextStyle(
+          child: Row(
+            children: [
+              Icon(
+                line.endsWith('/')
+                    ? Icons.folder
+                    : Icons.insert_drive_file_outlined,
+                size: 12,
+                color: colors.textPlaceholder,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  line,
+                  style: TextStyle(
                     color: colors.textSecondary,
                     fontSize: 11,
-                    fontFamily: 'monospace'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                    fontFamily: 'monospace',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       if (remaining > 0) ...[
         const SizedBox(height: 4),
@@ -885,9 +947,10 @@ class _WebFetchCard extends StatelessWidget {
             Text(
               'format: ${input.format}',
               style: TextStyle(
-                  color: colors.textPlaceholder,
-                  fontSize: 10,
-                  fontFamily: 'monospace'),
+                color: colors.textPlaceholder,
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
             ),
           ],
           _ExpandableResult(
@@ -933,9 +996,10 @@ class _GenericToolCard extends StatelessWidget {
                   ? '${message.toolInput!.substring(0, 200)}...'
                   : message.toolInput!,
               style: TextStyle(
-                  color: colors.textTertiary,
-                  fontSize: 11,
-                  fontFamily: 'monospace'),
+                color: colors.textTertiary,
+                fontSize: 11,
+                fontFamily: 'monospace',
+              ),
             ),
           _ExpandableResult(
             result: message.toolResult,

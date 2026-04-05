@@ -117,10 +117,7 @@ void main() {
     });
 
     test('rejects empty string', () {
-      expect(
-        () => PairingUri.parse(''),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => PairingUri.parse(''), throwsA(isA<FormatException>()));
     });
 
     test('rejects garbage', () {

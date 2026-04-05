@@ -162,7 +162,6 @@ class _ScanScreenState extends State<ScanScreen> {
   Widget _buildLensSelector() {
     if (!Platform.isIOS) return const SizedBox.shrink();
 
-    final c = context.colors;
     return Positioned(
       bottom: 16,
       left: 0,
@@ -255,10 +254,7 @@ class _ScanScreenState extends State<ScanScreen> {
   Widget build(BuildContext context) {
     return AdaptiveScaffold(
       title: 'Scan QR Code',
-      body: SafeArea(
-        top: false,
-        child: _buildBody(),
-      ),
+      body: SafeArea(top: false, child: _buildBody()),
     );
   }
 }
@@ -312,7 +308,11 @@ class _ViewfinderPainter extends CustomPainter {
         ..moveTo(size.width - cornerLen, size.height)
         ..lineTo(size.width - radius, size.height)
         ..quadraticBezierTo(
-            size.width, size.height, size.width, size.height - radius)
+          size.width,
+          size.height,
+          size.width,
+          size.height - radius,
+        )
         ..lineTo(size.width, size.height - cornerLen),
       paint,
     );

@@ -51,8 +51,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final notifier =
-        ref.read(terminalSessionProvider(widget.pairing).notifier);
+    final notifier = ref.read(terminalSessionProvider(widget.pairing).notifier);
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
@@ -70,8 +69,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
   // ---------------------------------------------------------------------------
 
   Future<bool> _onBackPressed() async {
-    final sessionState =
-        ref.read(terminalSessionProvider(widget.pairing)).sessionState;
+    final sessionState = ref
+        .read(terminalSessionProvider(widget.pairing))
+        .sessionState;
     if (sessionState == SessionState.disconnected ||
         sessionState == SessionState.error) {
       return true;
@@ -141,16 +141,19 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
         .read(terminalSessionProvider(widget.pairing).notifier)
         .consumeToast();
     if (toast != null) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => showAdaptiveToast(context, toast));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => showAdaptiveToast(context, toast),
+      );
     }
 
-    final showMicFab = !agent.showStructuredView &&
+    final showMicFab =
+        !agent.showStructuredView &&
         speech.available &&
         ts.sessionState == SessionState.connected;
 
-    final terminal =
-        ref.read(terminalSessionProvider(widget.pairing).notifier).terminal;
+    final terminal = ref
+        .read(terminalSessionProvider(widget.pairing).notifier)
+        .terminal;
 
     final body = Stack(
       children: [
@@ -169,7 +172,8 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
         if (showMicFab)
           Positioned(
             right: 16,
-            bottom: (agent.showStructuredView ? 80 : 24) +
+            bottom:
+                (agent.showStructuredView ? 80 : 24) +
                 MediaQuery.of(context).padding.bottom,
             child: const MicButton(),
           ),
@@ -194,7 +198,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildMaterialShell(
-      Widget body, TerminalSessionState ts, AgentState agent) {
+    Widget body,
+    TerminalSessionState ts,
+    AgentState agent,
+  ) {
     final c = context.colors;
     return Scaffold(
       resizeToAvoidBottomInset: agent.showStructuredView,
@@ -203,8 +210,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
         title: const Text('Terminal'),
         backgroundColor: c.surfacePrimary,
         foregroundColor: c.textPrimary,
-        leading:
-            IconButton(icon: const Icon(Icons.arrow_back), onPressed: _close),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _close,
+        ),
         actions: [
           if (ts.sessionState == SessionState.error ||
               ts.sessionState == SessionState.disconnected)
@@ -217,9 +226,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
             ),
           if (agent.hasStructuredEvents)
             IconButton(
-              icon: Icon(agent.showStructuredView
-                  ? Icons.terminal
-                  : Icons.auto_awesome),
+              icon: Icon(
+                agent.showStructuredView ? Icons.terminal : Icons.auto_awesome,
+              ),
               tooltip: agent.showStructuredView
                   ? 'Terminal view'
                   : 'Structured view',
@@ -244,7 +253,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
   }
 
   Widget _buildCupertinoShell(
-      Widget body, TerminalSessionState ts, AgentState agent) {
+    Widget body,
+    TerminalSessionState ts,
+    AgentState agent,
+  ) {
     final c = context.colors;
     return CupertinoPageScaffold(
       resizeToAvoidBottomInset: agent.showStructuredView,
@@ -269,8 +281,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                 onPressed: () => ref
                     .read(terminalSessionProvider(widget.pairing).notifier)
                     .connect(),
-                child: Icon(CupertinoIcons.refresh,
-                    color: c.textPrimary, size: 20),
+                child: Icon(
+                  CupertinoIcons.refresh,
+                  color: c.textPrimary,
+                  size: 20,
+                ),
               ),
             if (agent.hasStructuredEvents)
               CupertinoButton(
@@ -296,8 +311,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen>
                   onSendCtrl: _sendCtrl,
                   onPaste: _pasteClipboard,
                 ),
-                child: Icon(CupertinoIcons.command,
-                    color: c.textPrimary, size: 20),
+                child: Icon(
+                  CupertinoIcons.command,
+                  color: c.textPrimary,
+                  size: 20,
+                ),
               ),
           ],
         ),

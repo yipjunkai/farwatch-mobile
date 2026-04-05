@@ -352,203 +352,193 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
 
   /// The light theme — warm rose accent on iOS-standard light surfaces.
   factory FarwatchColors.light() => const FarwatchColors(
-        // Surfaces
-        background: Color(0xFFF2F2F7),
-        navBarBackground: Color(0xE6F9F9F9),
-        surfacePrimary: Colors.white,
-        surfaceSecondary: Color(0xFFE5E5EA),
-        surfaceTertiary: Color(0xFFD1D1D6),
-        glassSurface: Color(0xCCF9F9F9),
-        glassBorder: Color(0x1A000000),
-        statusBarSurface: Color(0x80F9F9F9),
-        inputBackground: Color(0xFFE5E5EA),
-        textPrimary: Colors.black,
-        textSecondary: Color(0xFF636366),
-        textTertiary: Color(0xFF8E8E93),
-        textPlaceholder: Color(0xFFAEAEB2),
-        textMuted: Color(0xFF8E8E93),
-        accent: Color(0xFFD4736A),
-        statusConnected: Color(0xFF34C759),
-        statusConnecting: Color(0xFFFF9500),
-        statusWarning: Color(0xFFFFCC00),
-        statusError: Color(0xFFFF3B30),
-        statusErrorAccent: Color(0xFFFF3B30),
-        statusNeutral: Color(0xFF8E8E93),
-        toolCallSurface: Color(0x1AD4736A),
-        toolCallBorder: Color(0x33D4736A),
-        toolCallAccent: Color(0xFFB85C54),
-        thinkingSurface: Color(0x1A9C27B0),
-        thinkingBorder: Color(0x339C27B0),
-        thinkingAccent: Color(0xFF7B1FA2),
-        thinkingIcon: Color(0xFF9C27B0),
-        errorSurface: Color(0x1AFF3B30),
-        errorBorder: Color(0x33FF3B30),
-        systemSurface: Color(0x14607D8B),
-        resultSurface: Color(0x0A000000),
-        infoSurface: Color(0x1AFFCC00),
-        infoBorder: Color(0x33FFCC00),
-        infoAccent: Color(0xFFB38F00),
-        permissionPendingSurface: Color(0x1AFFCC00),
-        permissionPendingBorder: Color(0x4DFFCC00),
-        permissionPendingAccent: Color(0xFFB38F00),
-        permissionResolvedSurface: Color(0x0A000000),
-        permissionResolvedBorder: Color(0x1A000000),
-        approveBackground: Color(0x3334C759),
-        approveText: Color(0xFF248A3D),
-        denyBackground: Color(0x33FF3B30),
-        denyText: Color(0xFFD70015),
-        allowedBadge: Color(0x3334C759),
-        deniedBadge: Color(0x33FF3B30),
-        questionSurface: Color(0x1AD4736A),
-        questionBorder: Color(0x33D4736A),
-        questionAccent: Color(0xFFB85C54),
-        questionPrimaryButton: Color(0x33D4736A),
-        questionSecondaryButton: Color(0x1AD4736A),
-        questionOptionSurface: Color(0x08000000),
-        questionOptionBorder: Color(0x14000000),
-        userBubble: Color(0xFFD4736A),
-        userBubbleText: Colors.white,
-        codeInlineBackground: Color(0x14000000),
-        codeBlockBackground: Color(0xFFF2F2F7),
-        codeBlockBorder: Color(0xFFD1D1D6),
-        copyButton: Color(0xFF8E8E93),
-        todoSurface: Color(0x14607D8B),
-        todoBorder: Color(0x26607D8B),
-        todoHeader: Color(0xFF546E7A),
-        todoCompleted: Color(0xFF34C759),
-        todoInProgress: Color(0xFFD4736A),
-        todoPending: Color(0xFF8E8E93),
-        todoHighPriority: Color(0xFFFF3B30),
-        costSurface: Color(0x0A000000),
-        costDivider: Color(0x14000000),
-        costIcon: Color(0xFF8E8E93),
-        micActive: Color(0xFFFF3B30),
-        micIdle: Color(0xFFE5E5EA),
-        sendActive: Color(0xFFD4736A),
-        promptBarBorder: Color(0xFFD1D1D6),
-        destructive: Color(0xFFFF3B30),
-        destructiveOnSurface: Colors.white,
-        sessionHostEnded: Color(0xFFFF9500),
-        sessionLost: Color(0xFFFF3B30),
-      );
+    // Surfaces
+    background: Color(0xFFF2F2F7),
+    navBarBackground: Color(0xE6F9F9F9),
+    surfacePrimary: Colors.white,
+    surfaceSecondary: Color(0xFFE5E5EA),
+    surfaceTertiary: Color(0xFFD1D1D6),
+    glassSurface: Color(0xCCF9F9F9),
+    glassBorder: Color(0x1A000000),
+    statusBarSurface: Color(0x80F9F9F9),
+    inputBackground: Color(0xFFE5E5EA),
+    textPrimary: Colors.black,
+    textSecondary: Color(0xFF636366),
+    textTertiary: Color(0xFF8E8E93),
+    textPlaceholder: Color(0xFFAEAEB2),
+    textMuted: Color(0xFF8E8E93),
+    accent: Color(0xFFD4736A),
+    statusConnected: Color(0xFF34C759),
+    statusConnecting: Color(0xFFFF9500),
+    statusWarning: Color(0xFFFFCC00),
+    statusError: Color(0xFFFF3B30),
+    statusErrorAccent: Color(0xFFFF3B30),
+    statusNeutral: Color(0xFF8E8E93),
+    toolCallSurface: Color(0x1AD4736A),
+    toolCallBorder: Color(0x33D4736A),
+    toolCallAccent: Color(0xFFB85C54),
+    thinkingSurface: Color(0x1A9C27B0),
+    thinkingBorder: Color(0x339C27B0),
+    thinkingAccent: Color(0xFF7B1FA2),
+    thinkingIcon: Color(0xFF9C27B0),
+    errorSurface: Color(0x1AFF3B30),
+    errorBorder: Color(0x33FF3B30),
+    systemSurface: Color(0x14607D8B),
+    resultSurface: Color(0x0A000000),
+    infoSurface: Color(0x1AFFCC00),
+    infoBorder: Color(0x33FFCC00),
+    infoAccent: Color(0xFFB38F00),
+    permissionPendingSurface: Color(0x1AFFCC00),
+    permissionPendingBorder: Color(0x4DFFCC00),
+    permissionPendingAccent: Color(0xFFB38F00),
+    permissionResolvedSurface: Color(0x0A000000),
+    permissionResolvedBorder: Color(0x1A000000),
+    approveBackground: Color(0x3334C759),
+    approveText: Color(0xFF248A3D),
+    denyBackground: Color(0x33FF3B30),
+    denyText: Color(0xFFD70015),
+    allowedBadge: Color(0x3334C759),
+    deniedBadge: Color(0x33FF3B30),
+    questionSurface: Color(0x1AD4736A),
+    questionBorder: Color(0x33D4736A),
+    questionAccent: Color(0xFFB85C54),
+    questionPrimaryButton: Color(0x33D4736A),
+    questionSecondaryButton: Color(0x1AD4736A),
+    questionOptionSurface: Color(0x08000000),
+    questionOptionBorder: Color(0x14000000),
+    userBubble: Color(0xFFD4736A),
+    userBubbleText: Colors.white,
+    codeInlineBackground: Color(0x14000000),
+    codeBlockBackground: Color(0xFFF2F2F7),
+    codeBlockBorder: Color(0xFFD1D1D6),
+    copyButton: Color(0xFF8E8E93),
+    todoSurface: Color(0x14607D8B),
+    todoBorder: Color(0x26607D8B),
+    todoHeader: Color(0xFF546E7A),
+    todoCompleted: Color(0xFF34C759),
+    todoInProgress: Color(0xFFD4736A),
+    todoPending: Color(0xFF8E8E93),
+    todoHighPriority: Color(0xFFFF3B30),
+    costSurface: Color(0x0A000000),
+    costDivider: Color(0x14000000),
+    costIcon: Color(0xFF8E8E93),
+    micActive: Color(0xFFFF3B30),
+    micIdle: Color(0xFFE5E5EA),
+    sendActive: Color(0xFFD4736A),
+    promptBarBorder: Color(0xFFD1D1D6),
+    destructive: Color(0xFFFF3B30),
+    destructiveOnSurface: Colors.white,
+    sessionHostEnded: Color(0xFFFF9500),
+    sessionLost: Color(0xFFFF3B30),
+  );
 
   /// The default dark theme.
   factory FarwatchColors.dark() => const FarwatchColors(
-        // Surfaces
-        background: Colors.black,
-        navBarBackground: Color(0xB01C1C1E),
-        surfacePrimary: Color(0xFF1C1C1E),   // ~ Colors.grey[900]
-        surfaceSecondary: Color(0xFF2C2C2E), // ~ Colors.grey[800]
-        surfaceTertiary: Color(0xFF3A3A3C),  // ~ Colors.grey[700]
-        glassSurface: Color(0xCC1C1C1E),
-        glassBorder: Color(0x33FFFFFF),
-        statusBarSurface: Color(0x801C1C1E),
-        inputBackground: Color(0xFF2C2C2E),
+    // Surfaces
+    background: Colors.black,
+    navBarBackground: Color(0xB01C1C1E),
+    surfacePrimary: Color(0xFF1C1C1E), // ~ Colors.grey[900]
+    surfaceSecondary: Color(0xFF2C2C2E), // ~ Colors.grey[800]
+    surfaceTertiary: Color(0xFF3A3A3C), // ~ Colors.grey[700]
+    glassSurface: Color(0xCC1C1C1E),
+    glassBorder: Color(0x33FFFFFF),
+    statusBarSurface: Color(0x801C1C1E),
+    inputBackground: Color(0xFF2C2C2E),
 
-        // Text
-        textPrimary: Colors.white,
-        textSecondary: Color(0xFF9E9E9E),    // ~ Colors.grey[400]
-        textTertiary: Color(0xFF8E8E93),     // ~ Colors.grey[500]
-        textPlaceholder: Color(0xFF757575),  // ~ Colors.grey[600]
-        textMuted: Color(0xFF8E8E93),        // ~ Colors.grey[500]
+    // Text
+    textPrimary: Colors.white,
+    textSecondary: Color(0xFF9E9E9E), // ~ Colors.grey[400]
+    textTertiary: Color(0xFF8E8E93), // ~ Colors.grey[500]
+    textPlaceholder: Color(0xFF757575), // ~ Colors.grey[600]
+    textMuted: Color(0xFF8E8E93), // ~ Colors.grey[500]
+    // Accent — warm rose/coral
+    accent: Color(0xFFE8758A),
 
-        // Accent — warm rose/coral
-        accent: Color(0xFFE8758A),
+    // Status
+    statusConnected: Colors.green,
+    statusConnecting: Colors.orange,
+    statusWarning: Colors.amber,
+    statusError: Colors.red,
+    statusErrorAccent: Colors.redAccent,
+    statusNeutral: Colors.grey,
 
-        // Status
-        statusConnected: Colors.green,
-        statusConnecting: Colors.orange,
-        statusWarning: Colors.amber,
-        statusError: Colors.red,
-        statusErrorAccent: Colors.redAccent,
-        statusNeutral: Colors.grey,
+    // Tool call cards
+    toolCallSurface: Color(0x1A00BCD4), // cyan @ ~10%
+    toolCallBorder: Color(0x4D00BCD4), // cyan @ ~30%
+    toolCallAccent: Color(0xFF80DEEA), // ~ Colors.cyan[200]
+    // Thinking cards
+    thinkingSurface: Color(0x1A9C27B0), // purple @ ~10%
+    thinkingBorder: Color(0x4D9C27B0), // purple @ ~30%
+    thinkingAccent: Color(0xFFCE93D8), // ~ Colors.purple[200]
+    thinkingIcon: Color(0xFFBA68C8), // ~ Colors.purple[300]
+    // Error cards
+    errorSurface: Color(0x1AF44336), // red @ ~10%
+    errorBorder: Color(0x4DF44336), // red @ ~30%
+    // System / result
+    systemSurface: Color(0x26607D8B), // blueGrey @ ~15%
+    resultSurface: Color(0x14808080), // grey @ ~8%
+    // Info banners
+    infoSurface: Color(0x1AFFC107), // amber @ ~10%
+    infoBorder: Color(0x4DFFC107), // amber @ ~30%
+    infoAccent: Color(0xFFFFD54F), // ~ Colors.amber[300]
+    // Permissions
+    permissionPendingSurface: Color(0x1AFFC107), // amber @ ~10%
+    permissionPendingBorder: Color(0x66FFC107), // amber @ ~40%
+    permissionPendingAccent: Color(0xFFFFD54F), // ~ Colors.amber[300]
+    permissionResolvedSurface: Color(0x14808080), // grey @ ~8%
+    permissionResolvedBorder: Color(0x33808080), // grey @ ~20%
+    approveBackground: Color(0x4D4CAF50), // green @ ~30%
+    approveText: Color(0xFFA5D6A7), // ~ Colors.green[200]
+    denyBackground: Color(0x33F44336), // red @ ~20%
+    denyText: Color(0xFFE57373), // ~ Colors.red[300]
+    allowedBadge: Color(0x334CAF50), // green @ ~20%
+    deniedBadge: Color(0x33F44336), // red @ ~20%
+    // Questions
+    questionSurface: Color(0x1A2196F3), // blue @ ~10%
+    questionBorder: Color(0x4D2196F3), // blue @ ~30%
+    questionAccent: Color(0xFF90CAF9), // ~ Colors.blue[200]
+    questionPrimaryButton: Color(0x4D2196F3), // blue @ ~30%
+    questionSecondaryButton: Color(0x332196F3), // blue @ ~20%
+    questionOptionSurface: Color(0x0DFFFFFF), // white @ ~5%
+    questionOptionBorder: Color(0x1AFFFFFF), // white @ ~10%
+    // User prompt bubble — warm rose
+    userBubble: Color(0xFFD4736A),
+    userBubbleText: Colors.white,
 
-        // Tool call cards
-        toolCallSurface: Color(0x1A00BCD4),  // cyan @ ~10%
-        toolCallBorder: Color(0x4D00BCD4),   // cyan @ ~30%
-        toolCallAccent: Color(0xFF80DEEA),    // ~ Colors.cyan[200]
+    // Markdown / code
+    codeInlineBackground: Color(0x26808080), // grey @ ~15%
+    codeBlockBackground: Color(0xFF1A1A1A),
+    codeBlockBorder: Color(0xFF2C2C2E),
+    copyButton: Color(0xFF8E8E93), // ~ Colors.grey[500]
+    // Todos
+    todoSurface: Color(0x1A607D8B), // blueGrey @ ~10%
+    todoBorder: Color(0x33607D8B), // blueGrey @ ~20%
+    todoHeader: Color(0xFFB0BEC5), // ~ Colors.blueGrey[200]
+    todoCompleted: Color(0xFF66BB6A), // ~ Colors.green[400]
+    todoInProgress: Color(0xFF42A5F5), // ~ Colors.blue[400]
+    todoPending: Color(0xFF757575), // ~ Colors.grey[600]
+    todoHighPriority: Colors.redAccent,
 
-        // Thinking cards
-        thinkingSurface: Color(0x1A9C27B0),  // purple @ ~10%
-        thinkingBorder: Color(0x4D9C27B0),   // purple @ ~30%
-        thinkingAccent: Color(0xFFCE93D8),   // ~ Colors.purple[200]
-        thinkingIcon: Color(0xFFBA68C8),     // ~ Colors.purple[300]
+    // Cost ticker
+    costSurface: Color(0x14808080), // grey @ ~8%
+    costDivider: Color(0x26808080), // grey @ ~15%
+    costIcon: Color(0xFF757575), // ~ Colors.grey[600]
+    // Mic
+    micActive: Colors.redAccent,
+    micIdle: Color(0xFF3A3A3C),
 
-        // Error cards
-        errorSurface: Color(0x1AF44336),     // red @ ~10%
-        errorBorder: Color(0x4DF44336),      // red @ ~30%
+    // Prompt
+    sendActive: Color(0xFFE8758A),
+    promptBarBorder: Color(0xFF2C2C2E),
 
-        // System / result
-        systemSurface: Color(0x26607D8B),    // blueGrey @ ~15%
-        resultSurface: Color(0x14808080),    // grey @ ~8%
+    // Destructive
+    destructive: Color(0xFFB71C1C), // ~ Colors.red[900]
+    destructiveOnSurface: Colors.white,
 
-        // Info banners
-        infoSurface: Color(0x1AFFC107),      // amber @ ~10%
-        infoBorder: Color(0x4DFFC107),       // amber @ ~30%
-        infoAccent: Color(0xFFFFD54F),       // ~ Colors.amber[300]
-
-        // Permissions
-        permissionPendingSurface: Color(0x1AFFC107), // amber @ ~10%
-        permissionPendingBorder: Color(0x66FFC107),  // amber @ ~40%
-        permissionPendingAccent: Color(0xFFFFD54F),  // ~ Colors.amber[300]
-        permissionResolvedSurface: Color(0x14808080), // grey @ ~8%
-        permissionResolvedBorder: Color(0x33808080),  // grey @ ~20%
-        approveBackground: Color(0x4D4CAF50),  // green @ ~30%
-        approveText: Color(0xFFA5D6A7),        // ~ Colors.green[200]
-        denyBackground: Color(0x33F44336),     // red @ ~20%
-        denyText: Color(0xFFE57373),           // ~ Colors.red[300]
-        allowedBadge: Color(0x334CAF50),       // green @ ~20%
-        deniedBadge: Color(0x33F44336),        // red @ ~20%
-
-        // Questions
-        questionSurface: Color(0x1A2196F3),    // blue @ ~10%
-        questionBorder: Color(0x4D2196F3),     // blue @ ~30%
-        questionAccent: Color(0xFF90CAF9),     // ~ Colors.blue[200]
-        questionPrimaryButton: Color(0x4D2196F3),  // blue @ ~30%
-        questionSecondaryButton: Color(0x332196F3), // blue @ ~20%
-        questionOptionSurface: Color(0x0DFFFFFF),   // white @ ~5%
-        questionOptionBorder: Color(0x1AFFFFFF),    // white @ ~10%
-
-        // User prompt bubble — warm rose
-        userBubble: Color(0xFFD4736A),
-        userBubbleText: Colors.white,
-
-        // Markdown / code
-        codeInlineBackground: Color(0x26808080), // grey @ ~15%
-        codeBlockBackground: Color(0xFF1A1A1A),
-        codeBlockBorder: Color(0xFF2C2C2E),
-        copyButton: Color(0xFF8E8E93),         // ~ Colors.grey[500]
-
-        // Todos
-        todoSurface: Color(0x1A607D8B),      // blueGrey @ ~10%
-        todoBorder: Color(0x33607D8B),       // blueGrey @ ~20%
-        todoHeader: Color(0xFFB0BEC5),       // ~ Colors.blueGrey[200]
-        todoCompleted: Color(0xFF66BB6A),    // ~ Colors.green[400]
-        todoInProgress: Color(0xFF42A5F5),   // ~ Colors.blue[400]
-        todoPending: Color(0xFF757575),      // ~ Colors.grey[600]
-        todoHighPriority: Colors.redAccent,
-
-        // Cost ticker
-        costSurface: Color(0x14808080),      // grey @ ~8%
-        costDivider: Color(0x26808080),      // grey @ ~15%
-        costIcon: Color(0xFF757575),         // ~ Colors.grey[600]
-
-        // Mic
-        micActive: Colors.redAccent,
-        micIdle: Color(0xFF3A3A3C),
-
-        // Prompt
-        sendActive: Color(0xFFE8758A),
-        promptBarBorder: Color(0xFF2C2C2E),
-
-        // Destructive
-        destructive: Color(0xFFB71C1C),      // ~ Colors.red[900]
-        destructiveOnSurface: Colors.white,
-
-        // Session tile
-        sessionHostEnded: Colors.orange,
-        sessionLost: Colors.red,
-      );
+    // Session tile
+    sessionHostEnded: Colors.orange,
+    sessionLost: Colors.red,
+  );
 
   // ── ThemeExtension boilerplate ──────────────────────────────────────────
 
@@ -668,11 +658,16 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       infoSurface: infoSurface ?? this.infoSurface,
       infoBorder: infoBorder ?? this.infoBorder,
       infoAccent: infoAccent ?? this.infoAccent,
-      permissionPendingSurface: permissionPendingSurface ?? this.permissionPendingSurface,
-      permissionPendingBorder: permissionPendingBorder ?? this.permissionPendingBorder,
-      permissionPendingAccent: permissionPendingAccent ?? this.permissionPendingAccent,
-      permissionResolvedSurface: permissionResolvedSurface ?? this.permissionResolvedSurface,
-      permissionResolvedBorder: permissionResolvedBorder ?? this.permissionResolvedBorder,
+      permissionPendingSurface:
+          permissionPendingSurface ?? this.permissionPendingSurface,
+      permissionPendingBorder:
+          permissionPendingBorder ?? this.permissionPendingBorder,
+      permissionPendingAccent:
+          permissionPendingAccent ?? this.permissionPendingAccent,
+      permissionResolvedSurface:
+          permissionResolvedSurface ?? this.permissionResolvedSurface,
+      permissionResolvedBorder:
+          permissionResolvedBorder ?? this.permissionResolvedBorder,
       approveBackground: approveBackground ?? this.approveBackground,
       approveText: approveText ?? this.approveText,
       denyBackground: denyBackground ?? this.denyBackground,
@@ -682,9 +677,12 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       questionSurface: questionSurface ?? this.questionSurface,
       questionBorder: questionBorder ?? this.questionBorder,
       questionAccent: questionAccent ?? this.questionAccent,
-      questionPrimaryButton: questionPrimaryButton ?? this.questionPrimaryButton,
-      questionSecondaryButton: questionSecondaryButton ?? this.questionSecondaryButton,
-      questionOptionSurface: questionOptionSurface ?? this.questionOptionSurface,
+      questionPrimaryButton:
+          questionPrimaryButton ?? this.questionPrimaryButton,
+      questionSecondaryButton:
+          questionSecondaryButton ?? this.questionSecondaryButton,
+      questionOptionSurface:
+          questionOptionSurface ?? this.questionOptionSurface,
       questionOptionBorder: questionOptionBorder ?? this.questionOptionBorder,
       userBubble: userBubble ?? this.userBubble,
       userBubbleText: userBubbleText ?? this.userBubbleText,
@@ -718,13 +716,25 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
     if (other is! FarwatchColors) return this;
     return FarwatchColors(
       background: Color.lerp(background, other.background, t)!,
-      navBarBackground: Color.lerp(navBarBackground, other.navBarBackground, t)!,
+      navBarBackground: Color.lerp(
+        navBarBackground,
+        other.navBarBackground,
+        t,
+      )!,
       surfacePrimary: Color.lerp(surfacePrimary, other.surfacePrimary, t)!,
-      surfaceSecondary: Color.lerp(surfaceSecondary, other.surfaceSecondary, t)!,
+      surfaceSecondary: Color.lerp(
+        surfaceSecondary,
+        other.surfaceSecondary,
+        t,
+      )!,
       surfaceTertiary: Color.lerp(surfaceTertiary, other.surfaceTertiary, t)!,
       glassSurface: Color.lerp(glassSurface, other.glassSurface, t)!,
       glassBorder: Color.lerp(glassBorder, other.glassBorder, t)!,
-      statusBarSurface: Color.lerp(statusBarSurface, other.statusBarSurface, t)!,
+      statusBarSurface: Color.lerp(
+        statusBarSurface,
+        other.statusBarSurface,
+        t,
+      )!,
       inputBackground: Color.lerp(inputBackground, other.inputBackground, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
@@ -733,10 +743,18 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
       statusConnected: Color.lerp(statusConnected, other.statusConnected, t)!,
-      statusConnecting: Color.lerp(statusConnecting, other.statusConnecting, t)!,
+      statusConnecting: Color.lerp(
+        statusConnecting,
+        other.statusConnecting,
+        t,
+      )!,
       statusWarning: Color.lerp(statusWarning, other.statusWarning, t)!,
       statusError: Color.lerp(statusError, other.statusError, t)!,
-      statusErrorAccent: Color.lerp(statusErrorAccent, other.statusErrorAccent, t)!,
+      statusErrorAccent: Color.lerp(
+        statusErrorAccent,
+        other.statusErrorAccent,
+        t,
+      )!,
       statusNeutral: Color.lerp(statusNeutral, other.statusNeutral, t)!,
       toolCallSurface: Color.lerp(toolCallSurface, other.toolCallSurface, t)!,
       toolCallBorder: Color.lerp(toolCallBorder, other.toolCallBorder, t)!,
@@ -752,12 +770,36 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       infoSurface: Color.lerp(infoSurface, other.infoSurface, t)!,
       infoBorder: Color.lerp(infoBorder, other.infoBorder, t)!,
       infoAccent: Color.lerp(infoAccent, other.infoAccent, t)!,
-      permissionPendingSurface: Color.lerp(permissionPendingSurface, other.permissionPendingSurface, t)!,
-      permissionPendingBorder: Color.lerp(permissionPendingBorder, other.permissionPendingBorder, t)!,
-      permissionPendingAccent: Color.lerp(permissionPendingAccent, other.permissionPendingAccent, t)!,
-      permissionResolvedSurface: Color.lerp(permissionResolvedSurface, other.permissionResolvedSurface, t)!,
-      permissionResolvedBorder: Color.lerp(permissionResolvedBorder, other.permissionResolvedBorder, t)!,
-      approveBackground: Color.lerp(approveBackground, other.approveBackground, t)!,
+      permissionPendingSurface: Color.lerp(
+        permissionPendingSurface,
+        other.permissionPendingSurface,
+        t,
+      )!,
+      permissionPendingBorder: Color.lerp(
+        permissionPendingBorder,
+        other.permissionPendingBorder,
+        t,
+      )!,
+      permissionPendingAccent: Color.lerp(
+        permissionPendingAccent,
+        other.permissionPendingAccent,
+        t,
+      )!,
+      permissionResolvedSurface: Color.lerp(
+        permissionResolvedSurface,
+        other.permissionResolvedSurface,
+        t,
+      )!,
+      permissionResolvedBorder: Color.lerp(
+        permissionResolvedBorder,
+        other.permissionResolvedBorder,
+        t,
+      )!,
+      approveBackground: Color.lerp(
+        approveBackground,
+        other.approveBackground,
+        t,
+      )!,
       approveText: Color.lerp(approveText, other.approveText, t)!,
       denyBackground: Color.lerp(denyBackground, other.denyBackground, t)!,
       denyText: Color.lerp(denyText, other.denyText, t)!,
@@ -766,14 +808,38 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       questionSurface: Color.lerp(questionSurface, other.questionSurface, t)!,
       questionBorder: Color.lerp(questionBorder, other.questionBorder, t)!,
       questionAccent: Color.lerp(questionAccent, other.questionAccent, t)!,
-      questionPrimaryButton: Color.lerp(questionPrimaryButton, other.questionPrimaryButton, t)!,
-      questionSecondaryButton: Color.lerp(questionSecondaryButton, other.questionSecondaryButton, t)!,
-      questionOptionSurface: Color.lerp(questionOptionSurface, other.questionOptionSurface, t)!,
-      questionOptionBorder: Color.lerp(questionOptionBorder, other.questionOptionBorder, t)!,
+      questionPrimaryButton: Color.lerp(
+        questionPrimaryButton,
+        other.questionPrimaryButton,
+        t,
+      )!,
+      questionSecondaryButton: Color.lerp(
+        questionSecondaryButton,
+        other.questionSecondaryButton,
+        t,
+      )!,
+      questionOptionSurface: Color.lerp(
+        questionOptionSurface,
+        other.questionOptionSurface,
+        t,
+      )!,
+      questionOptionBorder: Color.lerp(
+        questionOptionBorder,
+        other.questionOptionBorder,
+        t,
+      )!,
       userBubble: Color.lerp(userBubble, other.userBubble, t)!,
       userBubbleText: Color.lerp(userBubbleText, other.userBubbleText, t)!,
-      codeInlineBackground: Color.lerp(codeInlineBackground, other.codeInlineBackground, t)!,
-      codeBlockBackground: Color.lerp(codeBlockBackground, other.codeBlockBackground, t)!,
+      codeInlineBackground: Color.lerp(
+        codeInlineBackground,
+        other.codeInlineBackground,
+        t,
+      )!,
+      codeBlockBackground: Color.lerp(
+        codeBlockBackground,
+        other.codeBlockBackground,
+        t,
+      )!,
       codeBlockBorder: Color.lerp(codeBlockBorder, other.codeBlockBorder, t)!,
       copyButton: Color.lerp(copyButton, other.copyButton, t)!,
       todoSurface: Color.lerp(todoSurface, other.todoSurface, t)!,
@@ -782,7 +848,11 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       todoCompleted: Color.lerp(todoCompleted, other.todoCompleted, t)!,
       todoInProgress: Color.lerp(todoInProgress, other.todoInProgress, t)!,
       todoPending: Color.lerp(todoPending, other.todoPending, t)!,
-      todoHighPriority: Color.lerp(todoHighPriority, other.todoHighPriority, t)!,
+      todoHighPriority: Color.lerp(
+        todoHighPriority,
+        other.todoHighPriority,
+        t,
+      )!,
       costSurface: Color.lerp(costSurface, other.costSurface, t)!,
       costDivider: Color.lerp(costDivider, other.costDivider, t)!,
       costIcon: Color.lerp(costIcon, other.costIcon, t)!,
@@ -791,8 +861,16 @@ class FarwatchColors extends ThemeExtension<FarwatchColors> {
       sendActive: Color.lerp(sendActive, other.sendActive, t)!,
       promptBarBorder: Color.lerp(promptBarBorder, other.promptBarBorder, t)!,
       destructive: Color.lerp(destructive, other.destructive, t)!,
-      destructiveOnSurface: Color.lerp(destructiveOnSurface, other.destructiveOnSurface, t)!,
-      sessionHostEnded: Color.lerp(sessionHostEnded, other.sessionHostEnded, t)!,
+      destructiveOnSurface: Color.lerp(
+        destructiveOnSurface,
+        other.destructiveOnSurface,
+        t,
+      )!,
+      sessionHostEnded: Color.lerp(
+        sessionHostEnded,
+        other.sessionHostEnded,
+        t,
+      )!,
       sessionLost: Color.lerp(sessionLost, other.sessionLost, t)!,
     );
   }

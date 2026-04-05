@@ -62,14 +62,14 @@ class SessionRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        'pairingUri': pairingUri,
-        'sessionId': sessionId,
-        'relayUrl': relayUrl,
-        'toolName': toolName,
-        'connectedAt': connectedAt.toIso8601String(),
-        'lastActiveAt': lastActiveAt.toIso8601String(),
-        'endReason': endReason.name,
-      };
+    'pairingUri': pairingUri,
+    'sessionId': sessionId,
+    'relayUrl': relayUrl,
+    'toolName': toolName,
+    'connectedAt': connectedAt.toIso8601String(),
+    'lastActiveAt': lastActiveAt.toIso8601String(),
+    'endReason': endReason.name,
+  };
 
   factory SessionRecord.fromJson(Map<String, dynamic> json) {
     return SessionRecord(

@@ -198,7 +198,9 @@ void main() {
       final sealTest = crypto['seal_test'] as Map<String, dynamic>;
       final hostTxKey = hexToBytes(crypto['host_tx_key'] as String);
       final ciphertext = hexToBytes(sealTest['ciphertext'] as String);
-      final _ = hexToBytes(sealTest['plaintext'] as String); // verified via decrypt
+      final _ = hexToBytes(
+        sealTest['plaintext'] as String,
+      ); // verified via decrypt
       final nonce = sealTest['nonce'] as int;
 
       // Use SecureChannel to decrypt
@@ -209,10 +211,9 @@ void main() {
       // Verify host_tx == client_rx
       expect(bytesToHex(hostTxKey), bytesToHex(clientRxKey));
 
-      final channel = SecureChannel(SessionKeys(
-        tx: clientTxKey,
-        rx: clientRxKey,
-      ));
+      final channel = SecureChannel(
+        SessionKeys(tx: clientTxKey, rx: clientRxKey),
+      );
 
       final sealed = SealedFrame(nonce: nonce, ciphertext: ciphertext);
       final msg = await channel.open(sealed);
@@ -228,17 +229,25 @@ void main() {
       final clientTxKey = hexToBytes(crypto['client_tx_key'] as String);
       final clientRxKey = hexToBytes(crypto['client_rx_key'] as String);
 
-      final hostChannel = SecureChannel(SessionKeys(tx: hostTxKey, rx: hostRxKey));
-      final clientChannel = SecureChannel(SessionKeys(tx: clientTxKey, rx: clientRxKey));
+      final hostChannel = SecureChannel(
+        SessionKeys(tx: hostTxKey, rx: hostRxKey),
+      );
+      final clientChannel = SecureChannel(
+        SessionKeys(tx: clientTxKey, rx: clientRxKey),
+      );
 
       // Host -> Client
-      final sealed = await hostChannel.seal(PtyOutput(Uint8List.fromList(utf8.encode('hello from host'))));
+      final sealed = await hostChannel.seal(
+        PtyOutput(Uint8List.fromList(utf8.encode('hello from host'))),
+      );
       final opened = await clientChannel.open(sealed);
       expect(opened, isA<PtyOutput>());
       expect(utf8.decode((opened as PtyOutput).data), 'hello from host');
 
       // Client -> Host
-      final sealed2 = await clientChannel.seal(PtyInput(Uint8List.fromList(utf8.encode('hello from client'))));
+      final sealed2 = await clientChannel.seal(
+        PtyInput(Uint8List.fromList(utf8.encode('hello from client'))),
+      );
       final opened2 = await hostChannel.open(sealed2);
       expect(opened2, isA<PtyInput>());
       expect(utf8.decode((opened2 as PtyInput).data), 'hello from client');
@@ -250,17 +259,18 @@ void main() {
       final clientTxKey = hexToBytes(crypto['client_tx_key'] as String);
       final clientRxKey = hexToBytes(crypto['client_rx_key'] as String);
 
-      final hostChannel = SecureChannel(SessionKeys(tx: hostTxKey, rx: hostRxKey));
-      final clientChannel = SecureChannel(SessionKeys(tx: clientTxKey, rx: clientRxKey));
+      final hostChannel = SecureChannel(
+        SessionKeys(tx: hostTxKey, rx: hostRxKey),
+      );
+      final clientChannel = SecureChannel(
+        SessionKeys(tx: clientTxKey, rx: clientRxKey),
+      );
 
       final sealed = await hostChannel.seal(Heartbeat());
       await clientChannel.open(sealed);
 
       // Replaying the same frame should fail
-      expect(
-        () => clientChannel.open(sealed),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => clientChannel.open(sealed), throwsA(isA<StateError>()));
     });
 
     test('nonces increment', () async {

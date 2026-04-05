@@ -68,15 +68,20 @@ class EmptyState extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(CupertinoIcons.qrcode_viewfinder,
-                      size: 20, color: Colors.white),
+                  Icon(
+                    CupertinoIcons.qrcode_viewfinder,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                   SizedBox(width: 8),
-                  Text('Scan QR Code',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      )),
+                  Text(
+                    'Scan QR Code',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -89,8 +94,10 @@ class EmptyState extends StatelessWidget {
                 children: [
                   Icon(CupertinoIcons.link, size: 16, color: c.accent),
                   const SizedBox(width: 6),
-                  Text('Paste URI',
-                      style: TextStyle(color: c.accent, fontSize: 15)),
+                  Text(
+                    'Paste URI',
+                    style: TextStyle(color: c.accent, fontSize: 15),
+                  ),
                 ],
               ),
             ),

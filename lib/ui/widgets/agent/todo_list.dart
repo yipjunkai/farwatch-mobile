@@ -29,8 +29,14 @@ class AgentTodoList extends ConsumerWidget {
             children: [
               Icon(Icons.checklist, color: c.todoHeader, size: 14),
               const SizedBox(width: 6),
-              Text('Tasks',
-                  style: TextStyle(color: c.todoHeader, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(
+                'Tasks',
+                style: TextStyle(
+                  color: c.todoHeader,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const Spacer(),
               Text(
                 '${agent.todos.where((t) => t.status == "completed").length}/${agent.todos.length}',
@@ -52,33 +58,41 @@ class AgentTodoList extends ConsumerWidget {
                     isCompleted
                         ? Icons.check_circle
                         : isCancelled
-                            ? Icons.cancel
-                            : isInProgress
-                                ? Icons.play_circle_filled
-                                : Icons.radio_button_unchecked,
+                        ? Icons.cancel
+                        : isInProgress
+                        ? Icons.play_circle_filled
+                        : Icons.radio_button_unchecked,
                     color: isCompleted
                         ? c.todoCompleted
                         : isCancelled
-                            ? c.todoPending
-                            : isInProgress
-                                ? c.todoInProgress
-                                : c.todoPending,
+                        ? c.todoPending
+                        : isInProgress
+                        ? c.todoInProgress
+                        : c.todoPending,
                     size: 14,
                   ),
                   const SizedBox(width: 6),
                   if (todo.priority == 'high')
                     Container(
-                      width: 6, height: 6,
+                      width: 6,
+                      height: 6,
                       margin: const EdgeInsets.only(top: 4, right: 4),
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: c.todoHighPriority),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: c.todoHighPriority,
+                      ),
                     ),
                   Expanded(
                     child: Text(
                       todo.content,
                       style: TextStyle(
-                        color: isCompleted || isCancelled ? c.todoPending : c.textSecondary,
+                        color: isCompleted || isCancelled
+                            ? c.todoPending
+                            : c.textSecondary,
                         fontSize: 12,
-                        decoration: isCancelled ? TextDecoration.lineThrough : null,
+                        decoration: isCancelled
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                   ),

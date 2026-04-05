@@ -16,7 +16,11 @@ class MarkdownText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final plainStyle = TextStyle(color: c.textPrimary, fontSize: 14, height: 1.5);
+    final plainStyle = TextStyle(
+      color: c.textPrimary,
+      fontSize: 14,
+      height: 1.5,
+    );
 
     // For short text or text without markdown indicators, use plain text.
     // This is also safer during streaming (partial markdown can break the parser).
@@ -53,13 +57,29 @@ class MarkdownText extends StatelessWidget {
     return MarkdownStyleSheet(
       p: TextStyle(color: c.textPrimary, fontSize: 14, height: 1.5),
       h1: TextStyle(
-          color: c.textPrimary, fontSize: 22, fontWeight: FontWeight.bold, height: 1.4),
+        color: c.textPrimary,
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        height: 1.4,
+      ),
       h2: TextStyle(
-          color: c.textPrimary, fontSize: 18, fontWeight: FontWeight.bold, height: 1.4),
+        color: c.textPrimary,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        height: 1.4,
+      ),
       h3: TextStyle(
-          color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4),
+        color: c.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+      ),
       h4: TextStyle(
-          color: c.textPrimary, fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
+        color: c.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+      ),
       strong: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold),
       em: TextStyle(color: c.textPrimary, fontStyle: FontStyle.italic),
       code: TextStyle(
@@ -78,7 +98,10 @@ class MarkdownText extends StatelessWidget {
       listBullet: TextStyle(color: c.textSecondary, fontSize: 14),
       listIndent: 20.0,
       blockquote: TextStyle(
-          color: c.textTertiary, fontStyle: FontStyle.italic, fontSize: 14),
+        color: c.textTertiary,
+        fontStyle: FontStyle.italic,
+        fontSize: 14,
+      ),
       blockquoteDecoration: BoxDecoration(
         border: Border(left: BorderSide(color: c.surfaceTertiary, width: 3)),
       ),
@@ -87,7 +110,10 @@ class MarkdownText extends StatelessWidget {
         border: Border(top: BorderSide(color: c.surfaceTertiary, width: 1)),
       ),
       tableHead: TextStyle(
-          color: c.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+        color: c.textPrimary,
+        fontWeight: FontWeight.bold,
+        fontSize: 13,
+      ),
       tableBody: TextStyle(color: c.textSecondary, fontSize: 13),
       tableBorder: TableBorder.all(color: c.surfaceTertiary, width: 0.5),
     );

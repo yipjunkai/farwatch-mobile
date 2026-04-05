@@ -107,10 +107,7 @@ Future<Uint8List> computeHandshakeMac({
     ...remotePublic,
     ...sessionId.codeUnits,
   ];
-  final mac = await hmac.calculateMac(
-    transcript,
-    secretKey: SecretKey(txKey),
-  );
+  final mac = await hmac.calculateMac(transcript, secretKey: SecretKey(txKey));
   return Uint8List.fromList(mac.bytes);
 }
 
@@ -165,9 +162,7 @@ class SecureChannel {
   int _txNonce = 0;
   int? _lastRxNonce;
 
-  SecureChannel(SessionKeys keys)
-      : _txKey = keys.tx,
-        _rxKey = keys.rx;
+  SecureChannel(SessionKeys keys) : _txKey = keys.tx, _rxKey = keys.rx;
 
   /// Zero out key material when the channel is no longer needed.
   void dispose() {
@@ -188,7 +183,9 @@ class SecureChannel {
   /// Decrypt a SealedFrame into a SecureMessage.
   Future<SecureMessage> open(SealedFrame frame) async {
     if (_lastRxNonce != null && frame.nonce <= _lastRxNonce!) {
-      throw StateError('Replay detected: nonce ${frame.nonce} <= $_lastRxNonce');
+      throw StateError(
+        'Replay detected: nonce ${frame.nonce} <= $_lastRxNonce',
+      );
     }
 
     final plaintext = await _decrypt(_rxKey, frame.nonce, frame.ciphertext);
@@ -214,7 +211,11 @@ Uint8List _nonceFromCounter(int counter) {
   return nonce;
 }
 
-Future<Uint8List> _encrypt(Uint8List key, int counter, Uint8List plaintext) async {
+Future<Uint8List> _encrypt(
+  Uint8List key,
+  int counter,
+  Uint8List plaintext,
+) async {
   final nonce = _nonceFromCounter(counter);
   final secretBox = await _aesGcm.encrypt(
     plaintext,
@@ -225,7 +226,11 @@ Future<Uint8List> _encrypt(Uint8List key, int counter, Uint8List plaintext) asyn
   return Uint8List.fromList(secretBox.concatenation(nonce: false));
 }
 
-Future<Uint8List> _decrypt(Uint8List key, int counter, Uint8List ciphertext) async {
+Future<Uint8List> _decrypt(
+  Uint8List key,
+  int counter,
+  Uint8List ciphertext,
+) async {
   final nonce = _nonceFromCounter(counter);
   // Split ciphertext into actual ciphertext + MAC (last 16 bytes)
   if (ciphertext.length < 16) {
@@ -235,9 +240,6 @@ Future<Uint8List> _decrypt(Uint8List key, int counter, Uint8List ciphertext) asy
   final mac = Mac(ciphertext.sublist(ciphertext.length - 16));
 
   final secretBox = SecretBox(ct, nonce: nonce, mac: mac);
-  final plaintext = await _aesGcm.decrypt(
-    secretBox,
-    secretKey: SecretKey(key),
-  );
+  final plaintext = await _aesGcm.decrypt(secretBox, secretKey: SecretKey(key));
   return Uint8List.fromList(plaintext);
 }

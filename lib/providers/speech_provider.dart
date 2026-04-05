@@ -35,8 +35,9 @@ class SpeechState {
       available: available ?? this.available,
       listening: listening ?? this.listening,
       liveTranscript: liveTranscript ?? this.liveTranscript,
-      completedTranscript:
-          clearCompleted ? null : (completedTranscript ?? this.completedTranscript),
+      completedTranscript: clearCompleted
+          ? null
+          : (completedTranscript ?? this.completedTranscript),
     );
   }
 }
@@ -44,8 +45,8 @@ class SpeechState {
 /// Provider for speech-to-text. AutoDispose cleans up when terminal screen pops.
 final speechProvider =
     NotifierProvider.autoDispose<SpeechNotifier, SpeechState>(
-  SpeechNotifier.new,
-);
+      SpeechNotifier.new,
+    );
 
 class SpeechNotifier extends AutoDisposeNotifier<SpeechState> {
   late final stt.SpeechToText _speech;
@@ -79,7 +80,11 @@ class SpeechNotifier extends AutoDisposeNotifier<SpeechState> {
 
   void startListening() {
     if (!state.available || state.listening) return;
-    state = state.copyWith(listening: true, liveTranscript: '', clearCompleted: true);
+    state = state.copyWith(
+      listening: true,
+      liveTranscript: '',
+      clearCompleted: true,
+    );
     _speech.listen(
       onResult: _onResult,
       listenOptions: stt.SpeechListenOptions(
@@ -114,9 +119,6 @@ class SpeechNotifier extends AutoDisposeNotifier<SpeechState> {
   void _finalize() {
     final transcript = state.liveTranscript.trim();
     if (transcript.isEmpty) return;
-    state = state.copyWith(
-      completedTranscript: transcript,
-      liveTranscript: '',
-    );
+    state = state.copyWith(completedTranscript: transcript, liveTranscript: '');
   }
 }

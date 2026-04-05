@@ -74,8 +74,8 @@ class AdaptiveScaffold extends StatelessWidget {
           trailing: trailing.isEmpty
               ? null
               : trailing.length == 1
-                  ? trailing.first
-                  : Row(mainAxisSize: MainAxisSize.min, children: trailing),
+              ? trailing.first
+              : Row(mainAxisSize: MainAxisSize.min, children: trailing),
         ),
         child: body,
       );
@@ -124,7 +124,8 @@ class AdaptiveScaffoldRaw extends StatelessWidget {
       return CupertinoPageScaffold(
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
         backgroundColor: backgroundColor ?? c.background,
-        navigationBar: cupertinoNavBar ??
+        navigationBar:
+            cupertinoNavBar ??
             CupertinoNavigationBar(backgroundColor: c.navBarBackground),
         child: floatingActionButton != null
             ? Stack(children: [body, floatingActionButton!])
@@ -224,11 +225,17 @@ Future<void> showAdaptiveActionSheet({
         actions: actions.map((a) {
           return CupertinoActionSheetAction(
             isDestructiveAction: a.isDestructive,
-            onPressed: () { Navigator.of(ctx).pop(); a.onTap(); },
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              a.onTap();
+            },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (a.icon != null) ...[Icon(a.icon, size: 20), const SizedBox(width: 8)],
+                if (a.icon != null) ...[
+                  Icon(a.icon, size: 20),
+                  const SizedBox(width: 8),
+                ],
                 Text(a.label),
               ],
             ),
@@ -253,7 +260,8 @@ Future<void> showAdaptiveActionSheet({
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 margin: const EdgeInsets.only(top: 8, bottom: 8),
                 decoration: BoxDecoration(
                   color: c.surfaceTertiary,
@@ -262,19 +270,45 @@ Future<void> showAdaptiveActionSheet({
               ),
               if (title != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(title, style: TextStyle(color: c.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: c.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ...actions.map((a) {
                 return ListTile(
                   leading: a.icon != null
-                      ? Icon(a.icon, color: a.isDestructive ? c.statusError : c.textPrimary)
+                      ? Icon(
+                          a.icon,
+                          color: a.isDestructive
+                              ? c.statusError
+                              : c.textPrimary,
+                        )
                       : null,
-                  title: Text(a.label, style: TextStyle(color: a.isDestructive ? c.statusError : c.textPrimary)),
+                  title: Text(
+                    a.label,
+                    style: TextStyle(
+                      color: a.isDestructive ? c.statusError : c.textPrimary,
+                    ),
+                  ),
                   subtitle: a.subtitle != null
-                      ? Text(a.subtitle!, style: TextStyle(color: c.textTertiary, fontSize: 12))
+                      ? Text(
+                          a.subtitle!,
+                          style: TextStyle(color: c.textTertiary, fontSize: 12),
+                        )
                       : null,
-                  onTap: () { Navigator.of(ctx).pop(); a.onTap(); },
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    a.onTap();
+                  },
                 );
               }),
               const SizedBox(height: 8),
@@ -365,7 +399,9 @@ void showAdaptiveToast(BuildContext context, String message) {
     );
     overlay.insert(entry);
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -429,16 +465,19 @@ class _AnimatedToastState extends State<_AnimatedToast>
                 filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: _kGlassDark,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: _kGlassBorder, width: 0.5),
                   ),
-                  child: Text(widget.message,
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 14),
-                      textAlign: TextAlign.center),
+                  child: Text(
+                    widget.message,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),

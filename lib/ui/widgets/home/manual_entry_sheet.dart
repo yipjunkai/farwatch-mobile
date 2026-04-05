@@ -7,8 +7,10 @@ import '../../adaptive.dart';
 ///
 /// iOS: [CupertinoAlertDialog] with a text field.
 /// Android: Material [BottomSheet] with a text field.
-void showManualEntry(BuildContext context,
-    {required void Function(String uri) onConnect}) {
+void showManualEntry(
+  BuildContext context, {
+  required void Function(String uri) onConnect,
+}) {
   if (isApplePlatform) {
     _showCupertinoEntry(context, onConnect: onConnect);
   } else {
@@ -16,8 +18,10 @@ void showManualEntry(BuildContext context,
   }
 }
 
-void _showCupertinoEntry(BuildContext context,
-    {required void Function(String uri) onConnect}) {
+void _showCupertinoEntry(
+  BuildContext context, {
+  required void Function(String uri) onConnect,
+}) {
   final controller = TextEditingController();
   showCupertinoDialog<void>(
     context: context,
@@ -57,8 +61,10 @@ void _showCupertinoEntry(BuildContext context,
   ).then((_) => controller.dispose());
 }
 
-void _showMaterialEntry(BuildContext context,
-    {required void Function(String uri) onConnect}) {
+void _showMaterialEntry(
+  BuildContext context, {
+  required void Function(String uri) onConnect,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -96,8 +102,10 @@ class _MaterialEntrySheetState extends State<_MaterialEntrySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Paste pairing URI',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Paste pairing URI',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,

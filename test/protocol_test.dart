@@ -204,26 +204,30 @@ void main() {
 
   group('Dart encode/decode round-trip', () {
     test('RelayMessage Register encodes without error', () {
-      final original = RelayRegister(RegisterRequest(
-        protocolVersion: 2,
-        protocolVersionMin: 1,
-        clientVersion: '0.1.0',
-        sessionId: '550e8400-e29b-41d4-a716-446655440000',
-        pairingCode: 'ABCDEF-GHIJKL-MNOPQR',
-        role: PeerRole.client,
-      ));
+      final original = RelayRegister(
+        RegisterRequest(
+          protocolVersion: 2,
+          protocolVersionMin: 1,
+          clientVersion: '0.1.0',
+          sessionId: '550e8400-e29b-41d4-a716-446655440000',
+          pairingCode: 'ABCDEF-GHIJKL-MNOPQR',
+          role: PeerRole.client,
+        ),
+      );
       final bytes = encodeRelay(original);
       // Register is only sent by client, never received -- just verify encoding works
       expect(bytes.isNotEmpty, true);
     });
 
     test('PeerFrame Handshake round-trips', () {
-      final original = PeerFrameHandshake(Handshake(
-        publicKey: Uint8List(32),
-        fingerprint: 'abcdef0123456789',
-        toolName: 'test-tool',
-        timestampMs: 1700000000000,
-      ));
+      final original = PeerFrameHandshake(
+        Handshake(
+          publicKey: Uint8List(32),
+          fingerprint: 'abcdef0123456789',
+          toolName: 'test-tool',
+          timestampMs: 1700000000000,
+        ),
+      );
       final bytes = encodePeerFrame(original);
       final decoded = decodePeerFrame(bytes);
       expect(decoded, isA<PeerFrameHandshake>());
@@ -244,10 +248,9 @@ void main() {
     });
 
     test('PeerFrame Secure round-trips', () {
-      final original = PeerFrameSecure(SealedFrame(
-        nonce: 99,
-        ciphertext: Uint8List.fromList([1, 2, 3, 4, 5]),
-      ));
+      final original = PeerFrameSecure(
+        SealedFrame(nonce: 99, ciphertext: Uint8List.fromList([1, 2, 3, 4, 5])),
+      );
       final bytes = encodePeerFrame(original);
       final decoded = decodePeerFrame(bytes);
       expect(decoded, isA<PeerFrameSecure>());
@@ -263,7 +266,9 @@ void main() {
     });
 
     test('SecureMessage PtyOutput round-trips', () {
-      final original = PtyOutput(Uint8List.fromList(utf8.encode('test output')));
+      final original = PtyOutput(
+        Uint8List.fromList(utf8.encode('test output')),
+      );
       final bytes = encodeSecureMessage(original);
       final decoded = decodeSecureMessage(bytes);
       expect(decoded, isA<PtyOutput>());

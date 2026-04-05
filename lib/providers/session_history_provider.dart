@@ -15,12 +15,14 @@ final sessionHistoryRepositoryProvider = Provider<SessionHistoryRepository>(
 ///
 /// Mutations (`upsert`, `update`, `remove`, `clear`) are done via the notifier:
 /// `ref.read(sessionHistoryProvider.notifier).upsert(record)`.
-final sessionHistoryProvider = AsyncNotifierProvider<SessionHistoryNotifier, List<SessionRecord>>(
-  SessionHistoryNotifier.new,
-);
+final sessionHistoryProvider =
+    AsyncNotifierProvider<SessionHistoryNotifier, List<SessionRecord>>(
+      SessionHistoryNotifier.new,
+    );
 
 class SessionHistoryNotifier extends AsyncNotifier<List<SessionRecord>> {
-  SessionHistoryRepository get _repo => ref.read(sessionHistoryRepositoryProvider);
+  SessionHistoryRepository get _repo =>
+      ref.read(sessionHistoryRepositoryProvider);
 
   @override
   Future<List<SessionRecord>> build() async {

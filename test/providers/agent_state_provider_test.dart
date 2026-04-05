@@ -55,7 +55,13 @@ void main() {
     });
 
     test('handleEvent AgentSessionInit adds system message', () {
-      notifier.handleEvent(AgentSessionInit(sessionId: 'sess1', model: 'claude', tools: ['bash', 'write']));
+      notifier.handleEvent(
+        AgentSessionInit(
+          sessionId: 'sess1',
+          model: 'claude',
+          tools: ['bash', 'write'],
+        ),
+      );
       final state = container.read(agentStateProvider);
       expect(state.messages, hasLength(1));
       expect(state.messages.first.type, AgentMessageType.system);
@@ -96,7 +102,9 @@ void main() {
     });
 
     test('handleEvent AgentToolUseStart adds tool call message', () {
-      notifier.handleEvent(AgentToolUseStart(id: 't1', name: 'bash', input: 'ls -la'));
+      notifier.handleEvent(
+        AgentToolUseStart(id: 't1', name: 'bash', input: 'ls -la'),
+      );
       final state = container.read(agentStateProvider);
       expect(state.messages.last.type, AgentMessageType.toolCall);
       expect(state.messages.last.text, 'bash');
@@ -105,13 +113,17 @@ void main() {
     });
 
     test('handleEvent AgentToolResult adds result message', () {
-      notifier.handleEvent(AgentToolResult(id: 't1', content: 'output', isError: false));
+      notifier.handleEvent(
+        AgentToolResult(id: 't1', content: 'output', isError: false),
+      );
       final state = container.read(agentStateProvider);
       expect(state.messages.last.type, AgentMessageType.toolResult);
     });
 
     test('handleEvent AgentToolResult with error adds error message', () {
-      notifier.handleEvent(AgentToolResult(id: 't1', content: 'failed', isError: true));
+      notifier.handleEvent(
+        AgentToolResult(id: 't1', content: 'failed', isError: true),
+      );
       final state = container.read(agentStateProvider);
       expect(state.messages.last.type, AgentMessageType.toolError);
     });
@@ -124,43 +136,62 @@ void main() {
     });
 
     test('handleEvent AgentPermissionRequest tracks pending permission', () {
-      notifier.handleEvent(AgentPermissionRequest(
-        id: 'p1',
-        tool: 'bash',
-        title: 'Run command?',
-        metadata: 'rm -rf /',
-      ));
+      notifier.handleEvent(
+        AgentPermissionRequest(
+          id: 'p1',
+          tool: 'bash',
+          title: 'Run command?',
+          metadata: 'rm -rf /',
+        ),
+      );
       final state = container.read(agentStateProvider);
       expect(state.messages.last.type, AgentMessageType.permissionRequest);
       expect(state.pendingPermissions['p1'], isNull); // pending
     });
 
     test('handleEvent AgentPermissionResolved updates permission', () {
-      notifier.handleEvent(AgentPermissionRequest(
-        id: 'p1', tool: 'bash', title: 'Run?', metadata: '',
-      ));
-      notifier.handleEvent(AgentPermissionResolved(id: 'p1', response: 'allow'));
+      notifier.handleEvent(
+        AgentPermissionRequest(
+          id: 'p1',
+          tool: 'bash',
+          title: 'Run?',
+          metadata: '',
+        ),
+      );
+      notifier.handleEvent(
+        AgentPermissionResolved(id: 'p1', response: 'allow'),
+      );
       final state = container.read(agentStateProvider);
       expect(state.pendingPermissions['p1'], 'allow');
     });
 
     test('resolvePermission updates pending permission', () {
-      notifier.handleEvent(AgentPermissionRequest(
-        id: 'p2', tool: 'write', title: 'Write?', metadata: '',
-      ));
+      notifier.handleEvent(
+        AgentPermissionRequest(
+          id: 'p2',
+          tool: 'write',
+          title: 'Write?',
+          metadata: '',
+        ),
+      );
       notifier.resolvePermission('p2', 'deny');
-      expect(container.read(agentStateProvider).pendingPermissions['p2'], 'deny');
+      expect(
+        container.read(agentStateProvider).pendingPermissions['p2'],
+        'deny',
+      );
     });
 
     test('handleEvent AgentCostUpdate updates cost and tokens', () {
-      notifier.handleEvent(AgentCostUpdate(
-        costUsd: 0.0042,
-        inputTokens: 1500,
-        outputTokens: 500,
-        reasoningTokens: 0,
-        cacheReadTokens: 0,
-        cacheWriteTokens: 0,
-      ));
+      notifier.handleEvent(
+        AgentCostUpdate(
+          costUsd: 0.0042,
+          inputTokens: 1500,
+          outputTokens: 500,
+          reasoningTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+        ),
+      );
       final state = container.read(agentStateProvider);
       expect(state.costUsd, 0.0042);
       expect(state.inputTokens, 1500);
@@ -168,10 +199,24 @@ void main() {
     });
 
     test('handleEvent AgentTodoUpdate replaces todos', () {
-      notifier.handleEvent(AgentTodoUpdate(todos: [
-        TodoItem(id: '1', content: 'Task 1', status: 'pending', priority: 'high'),
-        TodoItem(id: '2', content: 'Task 2', status: 'completed', priority: 'low'),
-      ]));
+      notifier.handleEvent(
+        AgentTodoUpdate(
+          todos: [
+            TodoItem(
+              id: '1',
+              content: 'Task 1',
+              status: 'pending',
+              priority: 'high',
+            ),
+            TodoItem(
+              id: '2',
+              content: 'Task 2',
+              status: 'completed',
+              priority: 'low',
+            ),
+          ],
+        ),
+      );
       final state = container.read(agentStateProvider);
       expect(state.todos, hasLength(2));
       expect(state.todos.first.content, 'Task 1');

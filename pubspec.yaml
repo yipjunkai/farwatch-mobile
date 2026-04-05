@@ -44,14 +44,44 @@ dependencies:
   # Markdown rendering
   flutter_markdown: ^0.7.6
   
+  # Deep links
+  app_links: ^6.4.0
+
   # UI
   cupertino_icons: ^1.0.8
-  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.5
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  # Place your 1024×1024 icon at this path before running:
+  #   dart run flutter_launcher_icons
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  # Place your icon at assets/icon/icon.png before running:
+  #   dart run flutter_native_splash:create
+  color: "#000000"
+  image: "assets/icon/icon.png"
+  color_dark: "#000000"
+  image_dark: "assets/icon/icon.png"
+  android_12:
+    color: "#000000"
+    image: "assets/icon/icon.png"
+    color_dark: "#000000"
+    image_dark: "assets/icon/icon.png"
+  fullscreen: false
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,12 +50,47 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     PairingUri pairing,
-  ) {
+  ) async {
+    // Quick relay health check before navigating
+    final reachable = await _checkRelayReachable(pairing.relayUrl);
+    if (!reachable && context.mounted) {
+      final proceed = await showAdaptiveConfirmDialog(
+        context: context,
+        title: 'Relay unreachable',
+        content:
+            'Could not reach the relay server. The connection may fail.\n\n'
+            'Make sure your internet is working and the host is running.',
+        confirmLabel: 'Try anyway',
+      );
+      if (!proceed || !context.mounted) return;
+    }
+
+    if (!context.mounted) return;
     Navigator.of(context)
         .push(
           adaptivePageRoute(builder: (_) => TerminalScreen(pairing: pairing)),
         )
         .then((_) => ref.invalidate(sessionHistoryProvider));
+  }
+
+  static Future<bool> _checkRelayReachable(String relayUrl) async {
+    try {
+      final healthUrl = relayUrl
+          .replaceFirst('wss://', 'https://')
+          .replaceFirst('ws://', 'http://')
+          .replaceFirst('/ws', '/healthz');
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 2);
+      final request = await client.getUrl(Uri.parse(healthUrl));
+      final response = await request.close().timeout(
+        const Duration(seconds: 2),
+      );
+      await response.drain<void>();
+      client.close();
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _reconnectSession(

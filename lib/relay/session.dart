@@ -57,6 +57,14 @@ class RelaySession extends ChangeNotifier {
 
   /// Whether the connected host tool supports structured agent events.
   bool get isStructuredTool => _toolName == 'claude';
+
+  /// Local client fingerprint (available after key generation).
+  String? get localFingerprint => _localFingerprint;
+
+  /// When the E2E encrypted session was established.
+  DateTime? _connectedAt;
+  DateTime? get connectedAt => _connectedAt;
+
   bool _disposed = false;
 
   // Transport
@@ -231,7 +239,10 @@ class RelaySession extends ChangeNotifier {
     if (clientState == RelayConnectionState.reconnecting) {
       _setState(SessionState.reconnecting);
     } else if (clientState == RelayConnectionState.failed) {
-      _setError(_client?.lastError ?? 'Connection failed');
+      _setError(
+        _client?.lastError ??
+            'Could not connect to the relay server. Check your internet connection and try again.',
+      );
     }
   }
 
@@ -370,8 +381,9 @@ class RelaySession extends ChangeNotifier {
     if (pairing.expectedFingerprint != null &&
         handshake.fingerprint != pairing.expectedFingerprint) {
       _setError(
-        'Fingerprint mismatch: expected ${pairing.expectedFingerprint}, '
-        'got ${handshake.fingerprint}',
+        'Host identity changed. The host fingerprint doesn\'t match the one '
+        'in your pairing code. This could mean the host restarted or someone '
+        'is intercepting the connection. Try scanning a new QR code.',
       );
       return;
     }
@@ -416,7 +428,7 @@ class RelaySession extends ChangeNotifier {
 
       _setState(SessionState.awaitingConfirm);
     } catch (e) {
-      _setError('Handshake failed: $e');
+      _setError('Secure connection setup failed. Please try reconnecting.');
     } finally {
       _processingHandshake = false;
     }
@@ -439,13 +451,18 @@ class RelaySession extends ChangeNotifier {
 
     // Constant-time compare (uses crypto.dart helper)
     if (!constantTimeMacEqual(confirm.mac, _expectedPeerMac!)) {
-      _setError('Handshake MAC mismatch — possible MITM');
+      _setError(
+        'Security verification failed. The encrypted handshake could not be '
+        'verified, which may indicate a man-in-the-middle attack. '
+        'Disconnecting for safety. Try reconnecting with a new QR code.',
+      );
       _channel = null;
       _expectedPeerMac = null;
       return;
     }
 
     _expectedPeerMac = null;
+    _connectedAt = DateTime.now();
     _setState(SessionState.connected);
     log('[session] E2E channel established');
   }

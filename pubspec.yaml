@@ -47,6 +47,9 @@ dependencies:
   # Deep links
   app_links: ^6.4.0
 
+  # URL launcher
+  url_launcher: ^6.3.0
+
   # UI
   cupertino_icons: ^1.0.8
 

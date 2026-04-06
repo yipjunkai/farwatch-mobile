@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/pairing.dart';
 import '../../core/session_history.dart';
@@ -124,6 +125,48 @@ class HomeScreen extends ConsumerWidget {
   }
 
   // ---------------------------------------------------------------------------
+  // Legal footer
+  // ---------------------------------------------------------------------------
+
+  Widget _buildLegalFooter(FarwatchColors c) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () => launchUrl(
+              Uri.parse('https://farwatch.dev/privacy-policy'),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Text(
+              'Privacy Policy',
+              style: TextStyle(color: c.textTertiary, fontSize: 12),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              '·',
+              style: TextStyle(color: c.textTertiary, fontSize: 12),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => launchUrl(
+              Uri.parse('https://farwatch.dev/terms-and-conditions'),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Text(
+              'Terms',
+              style: TextStyle(color: c.textTertiary, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Material shell
   // ---------------------------------------------------------------------------
 
@@ -152,12 +195,19 @@ class HomeScreen extends ConsumerWidget {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : sessions.isEmpty
-          ? EmptyState(
-              onScanQr: () => _openScanner(context, ref),
-              onPasteUri: () => showManualEntry(
-                context,
-                onConnect: (uri) => _connectFromUri(context, ref, uri),
-              ),
+          ? Column(
+              children: [
+                Expanded(
+                  child: EmptyState(
+                    onScanQr: () => _openScanner(context, ref),
+                    onPasteUri: () => showManualEntry(
+                      context,
+                      onConnect: (uri) => _connectFromUri(context, ref, uri),
+                    ),
+                  ),
+                ),
+                _buildLegalFooter(c),
+              ],
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,16 +227,23 @@ class HomeScreen extends ConsumerWidget {
                 Expanded(
                   child: ListView.separated(
                     physics: adaptiveScrollPhysics,
-                    itemCount: sessions.length,
-                    separatorBuilder: (context, _) =>
-                        Divider(height: 1, color: c.surfacePrimary),
-                    itemBuilder: (_, i) => SessionTile(
-                      record: sessions[i],
-                      onTap: () => _reconnectSession(context, ref, sessions[i]),
-                      onDelete: () => ref
-                          .read(sessionHistoryProvider.notifier)
-                          .remove(sessions[i].sessionId),
-                    ),
+                    itemCount: sessions.length + 1,
+                    separatorBuilder: (context, i) =>
+                        i < sessions.length - 1
+                            ? Divider(height: 1, color: c.surfacePrimary)
+                            : const SizedBox.shrink(),
+                    itemBuilder: (_, i) {
+                      if (i == sessions.length) {
+                        return _buildLegalFooter(c);
+                      }
+                      return SessionTile(
+                        record: sessions[i],
+                        onTap: () => _reconnectSession(context, ref, sessions[i]),
+                        onDelete: () => ref
+                            .read(sessionHistoryProvider.notifier)
+                            .remove(sessions[i].sessionId),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -263,6 +320,7 @@ class HomeScreen extends ConsumerWidget {
             )
           else
             ..._buildSessionSlivers(context, ref, sessions),
+          SliverToBoxAdapter(child: _buildLegalFooter(c)),
         ],
       ),
     );

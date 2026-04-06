@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../core/pairing.dart';
 import '../../../providers/terminal_session_provider.dart';
@@ -65,9 +67,12 @@ class ConnectionStatusBar extends ConsumerWidget {
     final showReconnect =
         ts.sessionState == SessionState.error ||
         ts.sessionState == SessionState.disconnected;
+    final showInfo = ts.sessionState == SessionState.connected;
 
     void reconnect() =>
         ref.read(terminalSessionProvider(pairing).notifier).connect();
+
+    void showSessionInfo() => _showSessionInfoSheet(context, ref, c);
 
     if (isApplePlatform) {
       return GlassContainer(
@@ -91,6 +96,17 @@ class ConnectionStatusBar extends ConsumerWidget {
                 child: Text(
                   ts.toolName!,
                   style: TextStyle(color: c.textTertiary, fontSize: 12),
+                ),
+              ),
+            if (showInfo)
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                onPressed: showSessionInfo,
+                child: Icon(
+                  CupertinoIcons.info_circle,
+                  size: 16,
+                  color: c.textTertiary,
                 ),
               ),
             if (showReconnect)
@@ -131,12 +147,122 @@ class ConnectionStatusBar extends ConsumerWidget {
                 style: TextStyle(color: c.textTertiary, fontSize: 12),
               ),
             ),
+          if (showInfo)
+            GestureDetector(
+              onTap: showSessionInfo,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(Icons.info_outline, size: 16, color: c.textTertiary),
+              ),
+            ),
           if (showReconnect)
             GestureDetector(
               onTap: reconnect,
               child: Icon(Icons.refresh, size: 16, color: c.textSecondary),
             ),
         ],
+      ),
+    );
+  }
+
+  void _showSessionInfoSheet(
+    BuildContext context,
+    WidgetRef ref,
+    FarwatchColors c,
+  ) {
+    final notifier = ref.read(terminalSessionProvider(pairing).notifier);
+    final session = notifier.session;
+    final connectedAt = session.connectedAt;
+    final fingerprint = session.localFingerprint;
+    final hostFingerprint = pairing.expectedFingerprint;
+
+    final rows = <(String, String, bool)>[
+      ('Session ID', pairing.sessionId, true),
+      ('Relay', pairing.relayUrl, false),
+      if (connectedAt != null)
+        ('Connected', timeago.format(connectedAt), false),
+      if (fingerprint != null) ('Your fingerprint', fingerprint, true),
+      if (hostFingerprint != null) ('Host fingerprint', hostFingerprint, true),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.surfacePrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.textTertiary.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Session Info',
+                style: TextStyle(
+                  color: c.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (final (label, value, copyable) in rows)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: c.textTertiary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: copyable
+                              ? () {
+                                  Clipboard.setData(ClipboardData(text: value));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Copied $label'),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          child: Text(
+                            value,
+                            style: TextStyle(
+                              color: c.textSecondary,
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

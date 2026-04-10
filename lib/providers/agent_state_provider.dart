@@ -154,16 +154,7 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         return null;
 
       case AgentTurnStarted():
-        final messages = List<AgentMessage>.of(state.messages);
-        messages.add(
-          AgentMessage(
-            id: _nextId++,
-            type: AgentMessageType.turnMarker,
-            text: 'Turn started...',
-          ),
-        );
         state = state.copyWith(
-          messages: messages,
           agentBusy: true,
           agentTyping: true,
         );
@@ -187,6 +178,26 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         return null;
 
       case AgentTextBlock(text: final text):
+        // If the agent is not busy (no turn in progress), this is a user
+        // prompt echoed from the terminal — render as a right-aligned bubble.
+        // Skip if the last message already matches (sent from phone).
+        if (!state.agentBusy) {
+          final messages = List<AgentMessage>.of(state.messages);
+          final isDuplicate = messages.isNotEmpty &&
+              messages.last.type == AgentMessageType.userPrompt &&
+              messages.last.text == text;
+          if (!isDuplicate) {
+            messages.add(
+              AgentMessage(
+                id: _nextId++,
+                type: AgentMessageType.userPrompt,
+                text: text,
+              ),
+            );
+            state = state.copyWith(messages: messages);
+          }
+          return null;
+        }
         // Complete text block (non-streaming) — treat like TextDelta
         // but replace rather than append if a text message already exists
         // for this turn.
@@ -229,8 +240,10 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         name: final name,
         input: final input,
       ):
-        // Intercept mcp_question tool calls → render as native question UI.
-        if (name == 'mcp_question') {
+        // Intercept question tool calls → render as native question UI.
+        if (name == 'mcp_question' ||
+            name == 'question' ||
+            name == 'AskUserQuestion') {
           return _handleQuestionTool(id, input);
         }
         final messages = List<AgentMessage>.of(state.messages);

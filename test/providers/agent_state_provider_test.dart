@@ -74,7 +74,7 @@ void main() {
       notifier.handleEvent(AgentTurnStarted());
       final state = container.read(agentStateProvider);
       expect(state.agentBusy, true);
-      expect(state.messages.last.type, AgentMessageType.turnMarker);
+      expect(state.messages, isEmpty);
     });
 
     test('handleEvent AgentTextDelta appends to last text message', () {
@@ -89,7 +89,7 @@ void main() {
       notifier.handleEvent(AgentTurnStarted());
       notifier.handleEvent(AgentTextDelta(text: 'First'));
       final state = container.read(agentStateProvider);
-      expect(state.messages, hasLength(2)); // turnMarker + text
+      expect(state.messages, hasLength(1)); // text only (no turn marker)
     });
 
     test('handleEvent AgentThinkingDelta appends to last thinking', () {
@@ -228,15 +228,15 @@ void main() {
     });
 
     test('messages have unique incrementing IDs', () {
-      notifier.handleEvent(AgentTextDelta(text: 'a'));
       notifier.handleEvent(AgentTurnStarted());
-      notifier.handleEvent(AgentTextDelta(text: 'b'));
+      notifier.handleEvent(AgentTextDelta(text: 'a'));
+      notifier.handleEvent(AgentThinkingDelta(text: 'hmm'));
       final ids = container
           .read(agentStateProvider)
           .messages
           .map((m) => m.id)
           .toList();
-      expect(ids, orderedEquals([0, 1, 2]));
+      expect(ids, orderedEquals([0, 1]));
     });
   });
 }

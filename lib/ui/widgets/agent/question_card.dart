@@ -43,14 +43,16 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
   void _submit(List<String> labels) {
     HapticFeedback.mediumImpact();
     final toolId = widget.message.toolId ?? '';
-
-    // Send the answer as a prompt (the response format OpenCode expects).
     final answerText = labels.join(', ');
-    ref
-        .read(terminalSessionProvider(widget.pairing).notifier)
-        .sendAgentPrompt(answerText);
+    final session =
+        ref.read(terminalSessionProvider(widget.pairing).notifier);
 
-    // Mark the question as resolved in state.
+    // Send as PTY input with carriage return (terminal Enter key) so
+    // hosts that read stdin for question answers receive it immediately.
+    // Also send as structured AgentPrompt for hosts that handle it.
+    session.sendInput(Uint8List.fromList('$answerText\r'.codeUnits));
+    session.sendAgentPrompt(answerText);
+
     ref.read(agentStateProvider.notifier).resolveQuestion(toolId, labels);
   }
 

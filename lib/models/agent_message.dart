@@ -58,19 +58,46 @@ class QuestionItem {
   bool get isBinary => options.length == 2 && !multiple;
 }
 
-/// Parsed question data from a `mcp_question` tool call.
+/// Parsed question data from a question tool call.
+///
+/// Supports two formats:
+///  - Full: `{ "questions": [ { "header", "question", "options", ... } ] }`
+///  - Simple: `{ "question": "...", "options": [...] }` (Claude Code)
 class QuestionData {
   final List<QuestionItem> questions;
 
   const QuestionData({required this.questions});
 
-  factory QuestionData.fromJson(Map<String, dynamic> json) => QuestionData(
-    questions:
-        (json['questions'] as List<dynamic>?)
-            ?.map((q) => QuestionItem.fromJson(q as Map<String, dynamic>))
-            .toList() ??
-        [],
-  );
+  factory QuestionData.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('questions') && json['questions'] is List) {
+      return QuestionData(
+        questions: (json['questions'] as List<dynamic>)
+            .map((q) => QuestionItem.fromJson(q as Map<String, dynamic>))
+            .toList(),
+      );
+    }
+
+    if (json.containsKey('question')) {
+      final rawOptions = json['options'] as List<dynamic>? ?? [];
+      final options = rawOptions.map((o) {
+        if (o is Map<String, dynamic>) return QuestionOption.fromJson(o);
+        return QuestionOption(label: o.toString(), description: '');
+      }).toList();
+
+      return QuestionData(
+        questions: [
+          QuestionItem(
+            header: json['title'] as String? ?? 'Question',
+            question: json['question'] as String? ?? '',
+            options: options,
+            multiple: json['multiple'] as bool? ?? false,
+          ),
+        ],
+      );
+    }
+
+    return const QuestionData(questions: []);
+  }
 }
 
 // ---------------------------------------------------------------------------

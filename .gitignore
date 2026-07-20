@@ -172,3 +172,5 @@ $RECYCLE.BIN/
 # Fastlane generated files
 ios/fastlane/report.xml
 ios/fastlane/README.md
+
+.claude/

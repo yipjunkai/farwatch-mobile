@@ -154,10 +154,7 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         return null;
 
       case AgentTurnStarted():
-        state = state.copyWith(
-          agentBusy: true,
-          agentTyping: true,
-        );
+        state = state.copyWith(agentBusy: true, agentTyping: true);
         return null;
 
       case AgentTextDelta(text: final text):
@@ -183,7 +180,8 @@ class AgentStateNotifier extends AutoDisposeNotifier<AgentState> {
         // Skip if the last message already matches (sent from phone).
         if (!state.agentBusy) {
           final messages = List<AgentMessage>.of(state.messages);
-          final isDuplicate = messages.isNotEmpty &&
+          final isDuplicate =
+              messages.isNotEmpty &&
               messages.last.type == AgentMessageType.userPrompt &&
               messages.last.text == text;
           if (!isDuplicate) {

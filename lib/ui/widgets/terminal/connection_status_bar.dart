@@ -152,7 +152,11 @@ class ConnectionStatusBar extends ConsumerWidget {
               onTap: showSessionInfo,
               child: Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: Icon(Icons.info_outline, size: 16, color: c.textTertiary),
+                child: Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: c.textTertiary,
+                ),
               ),
             ),
           if (showReconnect)
@@ -228,10 +232,7 @@ class ConnectionStatusBar extends ConsumerWidget {
                         width: 120,
                         child: Text(
                           label,
-                          style: TextStyle(
-                            color: c.textTertiary,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: c.textTertiary, fontSize: 13),
                         ),
                       ),
                       Expanded(

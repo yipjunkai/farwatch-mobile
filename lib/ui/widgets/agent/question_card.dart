@@ -44,8 +44,7 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
     HapticFeedback.mediumImpact();
     final toolId = widget.message.toolId ?? '';
     final answerText = labels.join(', ');
-    final session =
-        ref.read(terminalSessionProvider(widget.pairing).notifier);
+    final session = ref.read(terminalSessionProvider(widget.pairing).notifier);
 
     // Send as PTY input with carriage return (terminal Enter key) so
     // hosts that read stdin for question answers receive it immediately.

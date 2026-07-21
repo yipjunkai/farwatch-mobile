@@ -56,8 +56,7 @@ class RelaySession extends ChangeNotifier {
   String? get toolName => _toolName;
 
   /// Whether the connected host tool supports structured agent events.
-  bool get isStructuredTool =>
-      _toolName == 'claude' || _toolName == 'opencode';
+  bool get isStructuredTool => _toolName == 'claude' || _toolName == 'opencode';
 
   /// Local client fingerprint (available after key generation).
   String? get localFingerprint => _localFingerprint;

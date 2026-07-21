@@ -265,17 +265,17 @@ class HomeScreen extends ConsumerWidget {
                   child: ListView.separated(
                     physics: adaptiveScrollPhysics,
                     itemCount: sessions.length + 1,
-                    separatorBuilder: (context, i) =>
-                        i < sessions.length - 1
-                            ? Divider(height: 1, color: c.surfacePrimary)
-                            : const SizedBox.shrink(),
+                    separatorBuilder: (context, i) => i < sessions.length - 1
+                        ? Divider(height: 1, color: c.surfacePrimary)
+                        : const SizedBox.shrink(),
                     itemBuilder: (_, i) {
                       if (i == sessions.length) {
                         return _buildLegalFooter(c);
                       }
                       return SessionTile(
                         record: sessions[i],
-                        onTap: () => _reconnectSession(context, ref, sessions[i]),
+                        onTap: () =>
+                            _reconnectSession(context, ref, sessions[i]),
                         onDelete: () => ref
                             .read(sessionHistoryProvider.notifier)
                             .remove(sessions[i].sessionId),

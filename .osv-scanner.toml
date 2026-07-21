@@ -1,0 +1,16 @@
+# OSV-Scanner configuration — https://google.github.io/osv-scanner/configuration/
+#
+# audit.yml runs OSV-Scanner over pubspec.lock, ios/Gemfile.lock, and the
+# Android gradle deps with --fail-on-vuln, so a genuinely actionable advisory
+# turns the audit red. This file documents the single accepted exception.
+
+[[IgnoredVulns]]
+id = "GHSA-48rx-c7pg-q66r" # CVE-2026-54171 — excon redirect Proxy-Authorization leak
+reason = """
+excon is held at 0.112.0 transitively by fastlane's faraday-excon, which pins \
+excon (>= 0.71.0, < 1.0.0). No fix exists on the 0.x line; the 1.5.0 fix is \
+unreachable until fastlane relaxes that bound. This is a CI/signing-only \
+dependency (fastlane talks to Apple App Store Connect and the Match certificate \
+repo) — it is never shipped in the app binary, so runtime exposure is nil. \
+Re-evaluate when fastlane widens the faraday-excon constraint.\
+"""

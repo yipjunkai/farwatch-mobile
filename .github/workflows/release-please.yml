@@ -1,0 +1,44 @@
+name: Release Please
+
+# Maintains a "Release X.Y.Z" PR with an auto-generated changelog from
+# conventional commits. Merging it bumps pubspec.yaml, updates CHANGELOG.md,
+# tags vX.Y.Z, and creates the GitHub release. The tag then fires testflight.yml
+# to build the iOS app and upload it to TestFlight.
+#
+# release-please authenticates as a GitHub App (not the default GITHUB_TOKEN),
+# so the tag it creates DOES trigger testflight.yml — without the App the tag
+# would be inert (GITHUB_TOKEN can't re-trigger CI).
+#
+# Requires two repo secrets:
+#   RELEASE_PLEASE_APP_ID   — the App's numeric id
+#   RELEASE_PLEASE_APP_KEY  — the App's downloaded .pem private key
+# The App needs Contents: read+write and Pull requests: read+write on this repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel an in-flight release PR generation — two concurrent runs would
+# corrupt the manifest.
+concurrency:
+  group: release-please
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_KEY }}
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ steps.app-token.outputs.token }}

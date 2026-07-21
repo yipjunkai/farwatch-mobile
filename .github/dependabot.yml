@@ -1,0 +1,68 @@
+version: 2
+
+updates:
+  # GitHub Actions: weekly grouped bumps. Group related actions to reduce PR noise.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      gha-minor:
+        update-types: [minor, patch]
+      gha-major:
+        update-types: [major]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  # Dart / Flutter deps (pubspec.yaml).
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      pub-minor:
+        update-types: [minor, patch]
+      pub-major:
+        update-types: [major]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  # iOS fastlane gems (ios/Gemfile).
+  - package-ecosystem: bundler
+    directory: /ios
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      bundler-minor:
+        update-types: [minor, patch]
+      bundler-major:
+        update-types: [major]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  # Android host build (android/*.gradle.kts). Majors (AGP/Kotlin) are grouped
+  # separately since a Flutter Android build is version-sensitive — review those
+  # deliberately.
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      gradle-minor:
+        update-types: [minor, patch]
+      gradle-major:
+        update-types: [major]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope

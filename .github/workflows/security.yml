@@ -1,0 +1,74 @@
+name: security
+
+# PR-attributable security checks: dependency-review diffs the dependency
+# changes a PR itself introduces; CodeQL scans the code at this commit. The
+# dependency-tree audit (OSV-Scanner over pubspec.lock + ios/Gemfile.lock +
+# gradle) — which goes red when a new upstream advisory is published, with no
+# change to this repo — lives in audit.yml on a schedule.
+#
+# CodeQL only runs 'actions' here: it has no Dart analyzer (the app is Flutter),
+# and the iOS/Android host shims are a few dozen lines of generated Swift/Kotlin
+# that would each need a full Xcode/Gradle build to scan — all cost, no signal.
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "LICENSE*"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE*"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+  schedule:
+    - cron: "0 6 * * 1" # weekly Monday — picks up new CodeQL query packs
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded runs on PRs, but never on main — every main commit keeps
+  # its own verdict.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  codeql:
+    name: codeql (actions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          languages: actions
+      - uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          category: actions

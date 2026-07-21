@@ -1,0 +1,48 @@
+name: audit
+
+# Dependency-tree audit via OSV-Scanner — the pub, RubyGems (fastlane/cocoapods),
+# and gradle equivalent of cargo-audit. It answers "did the *world* change?" (a
+# newly published advisory reddens it with no change to this repo), so it runs
+# on a weekly clock plus the PRs and pushes that change a lockfile. OSV-Scanner
+# is the only tool that reaches the RubyGems signing-toolchain deps that
+# `dart pub outdated` and Dependabot's version bumps miss.
+#
+# Findings upload to the Security > Code scanning tab (SARIF) and fail the run
+# (--fail-on-vuln, the reusable default). The one accepted, structurally-blocked
+# exception (excon, held <1.0.0 by fastlane) is documented in /.osv-scanner.toml.
+
+on:
+  schedule:
+    - cron: "0 5 * * 1" # weekly Monday (scorecard runs Mon 04:00; offset from it)
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "ios/Gemfile"
+      - "ios/Gemfile.lock"
+      - "ios/Podfile.lock"
+      - "android/**/*.gradle*"
+      - ".osv-scanner.toml"
+      - ".github/workflows/audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osv-scan:
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+      actions: read
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
+    with:
+      # -r ./ is the reusable default; --config applies the excon exception
+      # globally (it only matches that one advisory ID, so other ecosystems are
+      # unaffected). --format/--output are set by the reusable workflow.
+      scan-args: |-
+        --config=.osv-scanner.toml
+        -r
+        ./

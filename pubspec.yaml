@@ -30,13 +30,13 @@ dependencies:
   speech_to_text: ^7.0.0
 
   # State management
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.4.1
 
   # Local storage
   shared_preferences: ^2.3.0
 
   # App version info
-  package_info_plus: ^8.0.0
+  package_info_plus: ^10.2.1
 
   # Time formatting
   timeago: ^3.7.0
@@ -45,7 +45,7 @@ dependencies:
   flutter_markdown: ^0.7.6
   
   # Deep links
-  app_links: ^6.4.0
+  app_links: ^7.2.1
 
   # URL launcher
   url_launcher: ^6.3.0

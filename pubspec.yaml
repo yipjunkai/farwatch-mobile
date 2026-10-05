@@ -24,16 +24,16 @@ dependencies:
   web_socket_channel: ^3.0.2
 
   # QR code scanning
-  mobile_scanner: ^7.0.0
+  mobile_scanner: ^7.4.2
 
   # Speech-to-text (on-device recognition)
-  speech_to_text: ^7.0.0
+  speech_to_text: ^7.5.0
 
   # State management
   flutter_riverpod: ^2.6.1
 
   # Local storage
-  shared_preferences: ^2.3.0
+  shared_preferences: ^2.5.5
 
   # App version info
   package_info_plus: ^8.0.0
@@ -48,7 +48,7 @@ dependencies:
   app_links: ^6.4.0
 
   # URL launcher
-  url_launcher: ^6.3.0
+  url_launcher: ^6.3.3
 
   # UI
   cupertino_icons: ^1.0.8
@@ -58,7 +58,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
-  flutter_native_splash: ^2.4.5
+  flutter_native_splash: ^2.4.8
 
 flutter_launcher_icons:
   android: true
